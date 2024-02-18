@@ -1,0 +1,38 @@
+[project]
+name = "string-fixer"
+description = "Change quote style in Python files"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Crozzers", email = "captaincrozzers@gmail.com" }]
+dynamic = ["version"]
+
+dependencies = [
+    "libcst"
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only"
+]
+
+[project.urls]
+Source = "https://github.com/Crozzers/string-fixer"
+Issues = "https://github.com/Crozzers/string-fixer/issues"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "src._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["src"]
+
+[tool.mypy]
+check_untyped_defs = true
