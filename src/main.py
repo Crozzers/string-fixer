@@ -9,6 +9,14 @@ import re
 
 
 class DocstringDoubleToSingle(cst.CSTTransformer):
+    def _escape_quote(self, match: re.Match) -> str:
+        escapes, quote = match.groups()
+        if len(escapes) % 2 == 1:
+            # quote is escaped. Do nothing
+            return escapes + quote
+        # quote is not escaped. Escape it
+        return escapes + '\\' + quote
+
     def leave_SimpleString(self, original_node: cst.SimpleString, updated_node: cst.SimpleString) -> cst.SimpleString:
         if '"' not in original_node.quote:
             return original_node
@@ -17,9 +25,7 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
         text = updated_node.value[len(updated_node.quote): -len(updated_node.quote)]
         quote_len = len(updated_node.quote)
 
-        # escape quotes of same type
-        func: Callable[[re.Match], str] = lambda m: f'\\{m.group(1)[0]}' * len(m.group(1))
-        text = re.sub(r'(["\']{%d,})' % quote_len, func, text, flags=re.MULTILINE)
+        text = re.sub(r'(\\*)(["\']{%d,})' % quote_len, self._escape_quote, text, flags=re.MULTILINE)
 
         new_quote = "'" * len(updated_node.quote)
         return updated_node.with_changes(value=f'{new_quote}{text}{new_quote}')
