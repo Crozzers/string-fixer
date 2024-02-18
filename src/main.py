@@ -20,14 +20,17 @@ def replace_docstring_single_with_double_quotes(code: str) -> str:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('string-fixer', description='Simple tool to replace "double quotes" with \'single quotes\' in Python files.')
+    parser = argparse.ArgumentParser('string-fixer', description='Simple tool to replace "double quotes" with \'single quotes\' in Python files')
     parser.add_argument('target', type=str, help='File or directory of Python files to format. Only .py files will be included')
-    parser.add_argument('-d', '--dry-run', action='store_true', help='Show planned changes but don\'t modify any files.')
+    parser.add_argument('-d', '--dry-run', action='store_true', help='Show planned changes but don\'t modify any files')
+    parser.add_argument('-o', '--output', type=str, help='Instead of modifying files in-place, write a copy to this directory')
     args = parser.parse_args()
 
     collected_targets: List[Path] = []
+    parent: Path
 
     if os.path.isdir(args.target):
+        parent = Path(args.target)
         for path, _, files in os.walk(args.target):
             path = Path(path)
             for file in files:
@@ -35,6 +38,7 @@ if __name__ == '__main__':
                     continue
                 collected_targets.append(path / file)
     else:
+        parent = Path(args.target).parent
         if args.target.endswith('.py'):
             collected_targets.append(Path(args.target))
 
@@ -56,5 +60,9 @@ if __name__ == '__main__':
             print(modified)
             print('---')
         else:
+            if args.output:
+                file = Path(args.output).joinpath(*file.parts[len(parent.parts):])
+                print('Writing to:', file)
+                os.makedirs(file.parent, exist_ok=True)
             with open(file, 'w') as f:
                 f.write(modified)

@@ -21,10 +21,10 @@ python src/main.py src/
 
 ## Planned features
 
-- Dry run (no in-place modification) option
 - PyPI package
 - Smarter string replacement (not just proof-of-concept `str.replace(...)`)
 - Controls over what types of string get replaced
     - Docstrings
     - Multi-line string literals
     - Single line string literals
+- Configuration support via `pyproject.toml`
