@@ -24,6 +24,13 @@ classifiers = [
 Source = "https://github.com/Crozzers/string-fixer"
 Issues = "https://github.com/Crozzers/string-fixer/issues"
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-snapshot",
+]
+all = ["string-fixer[test]"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
