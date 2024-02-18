@@ -10,3 +10,5 @@
 
 '''Unescaped \\"quotation\\" in string'''
 '''Unescaped \\"quotation\\" in string'''
+
+'''\'\'\'Nested triple quote\'\'\''''

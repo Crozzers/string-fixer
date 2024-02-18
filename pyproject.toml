@@ -25,9 +25,12 @@ Source = "https://github.com/Crozzers/string-fixer"
 Issues = "https://github.com/Crozzers/string-fixer/issues"
 
 [project.optional-dependencies]
+dev = [
+    "ruff"
+]
 test = [
     "pytest",
-    "pytest-snapshot",
+    "pytest-snapshot"
 ]
 all = ["string-fixer[test]"]
 
@@ -43,3 +46,11 @@ include = ["src"]
 
 [tool.mypy]
 check_untyped_defs = true
+
+[tool.ruff]
+target-version = "py38"
+
+[tool.ruff.format]
+quote-style = "single"
+skip-magic-trailing-comma = true
+line-ending = "lf"
