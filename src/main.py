@@ -4,6 +4,7 @@ from libcst import parse_module
 import sys
 import os
 from pathlib import Path
+import argparse
 
 
 class DocstringSingleToDouble(cst.CSTTransformer):
@@ -19,20 +20,23 @@ def replace_docstring_single_with_double_quotes(code: str) -> str:
 
 
 if __name__ == '__main__':
-    target = sys.argv[1]
+    parser = argparse.ArgumentParser('string-fixer', description='Simple tool to replace "double quotes" with \'single quotes\' in Python files.')
+    parser.add_argument('target', type=str, help='File or directory of Python files to format. Only .py files will be included')
+    parser.add_argument('-d', '--dry-run', action='store_true', help='Show planned changes but don\'t modify any files.')
+    args = parser.parse_args()
 
     collected_targets: List[Path] = []
 
-    if os.path.isdir(target):
-        for path, _, files in os.walk(target):
+    if os.path.isdir(args.target):
+        for path, _, files in os.walk(args.target):
             path = Path(path)
             for file in files:
                 if not file.endswith('.py'):
                     continue
                 collected_targets.append(path / file)
     else:
-        if target.endswith('.py'):
-            collected_targets.append(Path(target))
+        if args.target.endswith('.py'):
+            collected_targets.append(Path(args.target))
 
     collected_targets = [i for i in collected_targets if i.exists()]
 
@@ -47,5 +51,10 @@ if __name__ == '__main__':
 
         modified = replace_docstring_single_with_double_quotes(code)
 
-        with open(file, 'w') as f:
-            f.write(modified)
+        if args.dry_run:
+            print('---')
+            print(modified)
+            print('---')
+        else:
+            with open(file, 'w') as f:
+                f.write(modified)
