@@ -21,4 +21,4 @@ def test_snapshots(snapshot, case: str):
     with open(input_file) as f:
         input_code = f.read()
 
-    snapshot.assert_match(string_fixer.replace_docstring_single_with_double_quotes(input_code), output_file)
+    snapshot.assert_match(string_fixer.replace_docstring_double_with_single_quotes(input_code), output_file)
