@@ -13,9 +13,11 @@ Neither project seems likely to add the option for entirely single-quoted code, 
 
 ```bash
 # run against single file
-python src/main.py my_file.py
+python src/main.py --target my_file.py
 # run against directory
-python src/main.py src/
+python src/main.py --target src/
+# run against working dir
+python src/main.py
 ```
 
 

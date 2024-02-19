@@ -1,11 +1,19 @@
-from typing import List
-import libcst as cst
-from libcst import parse_module
-import sys
-import os
-from pathlib import Path
 import argparse
+import os
 import re
+import sys
+from pathlib import Path
+from typing import List, Optional, TypedDict
+
+import libcst as cst
+import tomli
+from libcst import parse_module
+
+
+class Config(TypedDict):
+    target: Path
+    dry_run: bool
+    output: Optional[str]
 
 
 class DocstringDoubleToSingle(cst.CSTTransformer):
@@ -37,7 +45,7 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
             flags=re.MULTILINE,
         )
 
-        new_quote = "'" * len(updated_node.quote)
+        new_quote = '\'' * len(updated_node.quote)
         return updated_node.with_changes(value=f'{new_quote}{text}{new_quote}')
 
 
@@ -48,21 +56,58 @@ def replace_docstring_double_with_single_quotes(code: str) -> str:
     return modified_module.code
 
 
+def load_config(cli_overrides: argparse.Namespace) -> Config:
+    '''
+    Loads the program config from the following places (low -> high priority):
+    1. pyproject.toml in current working directory
+    2. pyproject.toml in target directory
+    3. CLI args
+    '''
+    base_config: Config = {
+        'target': Path('./'),
+        'dry_run': False,
+        'output': None
+    }
+    # check for config options in cwd
+    if os.path.isfile('./pyproject.toml'):
+        with open('./pyproject.toml', 'rb') as f:
+            toml = tomli.load(f)
+            if 'tool' in toml and 'string-fixer' in toml['tool']:
+                base_config.update(toml['tool']['string-fixer'])
+    # check for config options in target dir
+    target_dir = Path(base_config['target'])
+    if not target_dir.is_dir():
+        target_dir = Path(base_config['target']).parent
+
+    if os.path.isfile(target_dir / 'pyproject.toml'):
+        with open(target_dir / 'pyproject.toml', 'rb') as f:
+            toml = tomli.load(f)
+            if 'tool' in toml and 'string-fixer' in toml['tool']:
+                base_config.update(toml['tool']['string-fixer'])
+
+    for key, value in base_config.items():
+        if getattr(cli_overrides, key, None) is None:
+            continue
+        base_config[key] = Path(value) if key == 'target' else value
+    return base_config
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         'string-fixer',
         description='Simple tool to replace "double quotes" with \'single quotes\' in Python files',
     )
     parser.add_argument(
-        'target',
+        '-t',
+        '--target',
         type=str,
-        help='File or directory of Python files to format. Only .py files will be included',
+        help='File or directory of Python files to format. Only .py files will be included. (default: ./)',
     )
     parser.add_argument(
         '-d',
         '--dry-run',
         action='store_true',
-        help="Show planned changes but don't modify any files",
+        help='Show planned changes but don\'t modify any files',
     )
     parser.add_argument(
         '-o',
@@ -72,21 +117,23 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
+    config = load_config(args)
+
     collected_targets: List[Path] = []
     parent: Path
 
-    if os.path.isdir(args.target):
-        parent = Path(args.target)
-        for path, _, files in os.walk(args.target):
+    if os.path.isdir(config['target']):
+        parent = Path(config['target'])
+        for path, _, files in os.walk(config['target']):
             path = Path(path)
             for file in files:
                 if not file.endswith('.py'):
                     continue
                 collected_targets.append(path / file)
     else:
-        parent = Path(args.target).parent
-        if args.target.endswith('.py'):
-            collected_targets.append(Path(args.target))
+        parent = Path(config['target']).parent
+        if config['target'].suffix == '.py':
+            collected_targets.append(Path(config['target']))
 
     collected_targets = [i for i in collected_targets if i.exists()]
 
@@ -101,13 +148,13 @@ if __name__ == '__main__':
 
         modified = replace_docstring_double_with_single_quotes(code)
 
-        if args.dry_run:
+        if config['dry_run']:
             print('---')
             print(modified)
             print('---')
         else:
-            if args.output:
-                file = Path(args.output).joinpath(*file.parts[len(parent.parts) :])
+            if config['output']:
+                file = Path(config['output']).joinpath(*file.parts[len(parent.parts) :])
                 print('Writing to:', file)
                 os.makedirs(file.parent, exist_ok=True)
             with open(file, 'w') as f:
