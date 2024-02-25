@@ -1,4 +1,5 @@
 import argparse
+from functools import cache
 import os
 import re
 import sys
@@ -14,6 +15,15 @@ class Config(TypedDict):
     target: Path
     dry_run: bool
     output: Optional[str]
+    extends: Optional[Path]
+
+
+DEFAULT_CONFIG: Config = {
+    'target': Path('./'),
+    'dry_run': False,
+    'output': None,
+    'extends': None
+}
 
 
 class DocstringDoubleToSingle(cst.CSTTransformer):
@@ -56,40 +66,62 @@ def replace_docstring_double_with_single_quotes(code: str) -> str:
     return modified_module.code
 
 
-def load_config(cli_overrides: argparse.Namespace) -> Config:
-    '''
-    Loads the program config from the following places (low -> high priority):
-    1. pyproject.toml in current working directory
-    2. pyproject.toml in target directory
-    3. CLI args
-    '''
-    base_config: Config = {
-        'target': Path('./'),
-        'dry_run': False,
-        'output': None
-    }
-    # check for config options in cwd
-    if os.path.isfile('./pyproject.toml'):
-        with open('./pyproject.toml', 'rb') as f:
-            toml = tomli.load(f)
-            if 'tool' in toml and 'string-fixer' in toml['tool']:
-                base_config.update(toml['tool']['string-fixer'])
-    # check for config options in target dir
-    target_dir = Path(base_config['target'])
-    if not target_dir.is_dir():
-        target_dir = Path(base_config['target']).parent
+def load_config_dict(config: dict, rel_to: Path) -> Config:
+    for key, value in DEFAULT_CONFIG.items():
+        config.setdefault(key, value)
 
-    if os.path.isfile(target_dir / 'pyproject.toml'):
-        with open(target_dir / 'pyproject.toml', 'rb') as f:
-            toml = tomli.load(f)
-            if 'tool' in toml and 'string-fixer' in toml['tool']:
-                base_config.update(toml['tool']['string-fixer'])
+    if config.get('ignore', []):
+        ignore = []
+        for pattern in config['ignore']:
+            ignore.extend(rel_to.glob(pattern))
+        config['ignore'] = ignore
+    return config
 
-    for key, value in base_config.items():
-        if getattr(cli_overrides, key, None) is None:
-            continue
-        base_config[key] = Path(value) if key == 'target' else value
-    return base_config
+
+@cache
+def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
+    '''
+    Loads closest cconfig file to `path` in directory tree, up to `limit`.
+
+    Args:
+        path: The dir to start from when loading config files
+        limit: Don't go higher than this dir
+
+    Returns:
+        Config from closest config file, or default config if N/A
+    '''
+    path = path.parent if path.is_file() else path
+    file = path / 'pyproject.toml'
+    if file.exists():
+        with open(file, 'rb') as f:
+            toml = tomli.load(f)
+        if 'tool' in toml and 'string-fixer' in toml['tool']:
+            return load_config_dict(toml['tool']['string-fixer'], path)
+    if limit and path != limit:
+        return load_config_from_dir(path.parent)
+    return DEFAULT_CONFIG
+
+
+def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
+    assert file.is_file()
+    base_dir = base_dir or file.parent
+    print('Processing:', file)
+    with open(file) as f:
+        code = f.read()
+
+    modified = replace_docstring_double_with_single_quotes(code)
+
+    if config.get('dry_run', False):
+        print('---')
+        print(modified)
+        print('---')
+    else:
+        if config['output']:
+            file = Path(config['output']).joinpath(*file.parts[len(base_dir.parts) :])
+            print('Writing to:', file)
+            os.makedirs(file.parent, exist_ok=True)
+        with open(file, 'w') as f:
+            f.write(modified)
 
 
 if __name__ == '__main__':
@@ -117,45 +149,23 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    config = load_config(args)
+    config = load_config_from_dir(Path('./'))
+    for key, value in vars(args).items():
+        if value:
+            config[key] = value
 
-    collected_targets: List[Path] = []
-    parent: Path
+    target = Path(config['target'])
 
-    if os.path.isdir(config['target']):
-        parent = Path(config['target'])
-        for path, _, files in os.walk(config['target']):
-            path = Path(path)
-            for file in files:
-                if not file.endswith('.py'):
-                    continue
-                collected_targets.append(path / file)
+    if target.is_file():
+        process_file(target, config)
     else:
-        parent = Path(config['target']).parent
-        if config['target'].suffix == '.py':
-            collected_targets.append(Path(config['target']))
-
-    collected_targets = [i for i in collected_targets if i.exists()]
-
-    if not collected_targets:
-        print('No valid .py files found')
-        sys.exit(1)
-
-    for file in collected_targets:
-        print('Processing:', file)
-        with open(file) as f:
-            code = f.read()
-
-        modified = replace_docstring_double_with_single_quotes(code)
-
-        if config['dry_run']:
-            print('---')
-            print(modified)
-            print('---')
-        else:
-            if config['output']:
-                file = Path(config['output']).joinpath(*file.parts[len(parent.parts) :])
-                print('Writing to:', file)
-                os.makedirs(file.parent, exist_ok=True)
-            with open(file, 'w') as f:
-                f.write(modified)
+        for root, _, files in os.walk(target):
+            root = Path(root)
+            config = load_config_from_dir(root, limit=target)
+            for file in files:
+                file = root / file
+                if file in config.get('ignore', []):
+                    continue
+                if not file.suffix == '.py':
+                    continue
+                process_file(file, config, base_dir=target)

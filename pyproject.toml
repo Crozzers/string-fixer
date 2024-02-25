@@ -62,3 +62,6 @@ line-ending = "lf"
 [tool.string-fixer]
 target="src"
 dry_run=false
+ignore = [
+    "test/**"
+]
