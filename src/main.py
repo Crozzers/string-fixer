@@ -4,7 +4,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, Union
 
 import libcst as cst
 import tomli
@@ -14,7 +14,8 @@ from libcst import parse_module
 class Config(TypedDict):
     target: Path
     dry_run: bool
-    output: Optional[str]
+    output: Optional[Path]
+    ignore: Optional[List[Path]]
     extends: Optional[Path]
 
 
@@ -22,6 +23,7 @@ DEFAULT_CONFIG: Config = {
     'target': Path('./'),
     'dry_run': False,
     'output': None,
+    'ignore': None,
     'extends': None
 }
 
@@ -66,22 +68,46 @@ def replace_docstring_double_with_single_quotes(code: str) -> str:
     return modified_module.code
 
 
-def load_config_dict(config: dict, rel_to: Path) -> Config:
+def load_config_from_file(file: Path) -> Union[Config, None]:
+    if not file.exists():
+        return
+
+    with open(file, 'rb') as f:
+        toml = tomli.load(f)
+    if 'tool' not in toml or 'string-fixer' not in toml['tool']:
+        return
+
+    config = toml['tool']['string-fixer']
+
+    if (extends := config.get('extends', None)):
+        extends = (file.parent / extends).resolve()
+        config['extends'] = extends
+        extends = extends.parent if extends.is_file() else extends
+
+        config = {**load_config_from_dir(extends), **config}
+
     for key, value in DEFAULT_CONFIG.items():
         config.setdefault(key, value)
+
+    if (target := config.get('target')):
+        config['target'] = (file.parent / target).resolve()
+
+    if (output := config.get('output')):
+        config['output'] = (file.parent / output).resolve()
 
     if config.get('ignore', []):
         ignore = []
         for pattern in config['ignore']:
-            ignore.extend(rel_to.glob(pattern))
+            ignore.extend(file.parent.glob(pattern))
         config['ignore'] = ignore
+
     return config
 
 
 @cache
 def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
     '''
-    Loads closest cconfig file to `path` in directory tree, up to `limit`.
+    Loads closest config file to `path` in directory tree, up to `limit`.
 
     Args:
         path: The dir to start from when loading config files
@@ -92,11 +118,8 @@ def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
     '''
     path = path.parent if path.is_file() else path
     file = path / 'pyproject.toml'
-    if file.exists():
-        with open(file, 'rb') as f:
-            toml = tomli.load(f)
-        if 'tool' in toml and 'string-fixer' in toml['tool']:
-            return load_config_dict(toml['tool']['string-fixer'], path)
+    if (config := load_config_from_file(file)):
+        return config
     if limit and path != limit:
         return load_config_from_dir(path.parent)
     return DEFAULT_CONFIG
