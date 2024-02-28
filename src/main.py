@@ -1,8 +1,7 @@
 import argparse
-from functools import cache
 import os
 import re
-import sys
+from functools import cache
 from pathlib import Path
 from typing import List, Optional, TypedDict, Union
 
@@ -24,7 +23,7 @@ DEFAULT_CONFIG: Config = {
     'dry_run': False,
     'output': None,
     'ignore': None,
-    'extends': None
+    'extends': None,
 }
 
 
@@ -79,7 +78,7 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
 
     config = toml['tool']['string-fixer']
 
-    if (extends := config.get('extends', None)):
+    if extends := config.get('extends', None):
         extends = (file.parent / extends).resolve()
         config['extends'] = extends
         extends = extends.parent if extends.is_file() else extends
@@ -89,10 +88,10 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
     for key, value in DEFAULT_CONFIG.items():
         config.setdefault(key, value)
 
-    if (target := config.get('target')):
+    if target := config.get('target'):
         config['target'] = (file.parent / target).resolve()
 
-    if (output := config.get('output')):
+    if output := config.get('output'):
         config['output'] = (file.parent / output).resolve()
 
     if config.get('ignore', []):
@@ -118,7 +117,7 @@ def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
     '''
     path = path.parent if path.is_file() else path
     file = path / 'pyproject.toml'
-    if (config := load_config_from_file(file)):
+    if config := load_config_from_file(file):
         return config
     if limit and path != limit:
         return load_config_from_dir(path.parent)
@@ -129,6 +128,7 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
     assert file.is_file()
     base_dir = base_dir or file.parent
     print('Processing:', file)
+    print('Conf', config)
     with open(file) as f:
         code = f.read()
 

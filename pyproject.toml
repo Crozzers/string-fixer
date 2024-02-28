@@ -55,6 +55,7 @@ target-version = "py38"
 extend-select = ["I"]
 
 [tool.ruff.format]
+exclude = ["test/**"]
 quote-style = "single"
 skip-magic-trailing-comma = true
 line-ending = "lf"
