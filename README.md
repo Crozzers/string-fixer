@@ -13,20 +13,19 @@ Neither project seems likely to add the option for entirely single-quoted code, 
 
 ```bash
 # run against single file
-python src/main.py --target my_file.py
+python lib/src/main.py --target my_file.py
 # run against directory
-python src/main.py --target src/
+python lib/src/main.py --target lib/src/
 # run against working dir
-python src/main.py
+python lib/src/main.py
 ```
 
 
 ## Planned features
 
 - PyPI package
-- Smarter string replacement (not just proof-of-concept `str.replace(...)`)
+- Smarter string replacement
 - Controls over what types of string get replaced
     - Docstrings
     - Multi-line string literals
     - Single line string literals
-- Configuration support via `pyproject.toml`

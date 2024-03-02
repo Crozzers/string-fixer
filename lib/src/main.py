@@ -187,7 +187,7 @@ if __name__ == '__main__':
             config = load_config_from_dir(root, limit=target)
             for file in files:
                 file = root / file
-                if file in config.get('ignore', []):
+                if file in (config.get('ignore') or []):
                     continue
                 if not file.suffix == '.py':
                     continue
