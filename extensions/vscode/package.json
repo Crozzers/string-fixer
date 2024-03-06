@@ -13,6 +13,9 @@
     "ms-python.python"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:python"
+  ],
   "contributes": {
     "commands": [
       {

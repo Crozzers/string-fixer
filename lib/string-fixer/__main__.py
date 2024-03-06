@@ -3,6 +3,7 @@ import os
 import re
 from functools import cache
 from pathlib import Path
+import sys
 from typing import List, Optional, TypedDict, Union
 
 import libcst as cst
@@ -136,7 +137,7 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
 
     if config.get('dry_run', False):
         print('---')
-        print(modified)
+        print(modified, file=sys.stderr)
         print('---')
     else:
         if config['output']:

@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import { PythonExtension } from '@vscode/python-extension';
+import { promisify } from 'util';
+import { stderr } from 'process';
+
+const execFile = promisify(childProcess.execFile);
 
 function getExecFolder(): string {
   const config = vscode.workspace.getConfiguration('string-fixer');
@@ -27,38 +31,61 @@ async function getPythonExe(): Promise<string> {
   return exe;
 }
 
+async function runStringFixer(cmdArgs?: string[]) {
+  let execFolder: string;
+  let python: string;
+  try {
+    execFolder = getExecFolder();
+    python = await getPythonExe();
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : 'There was an unidentified error';
+    vscode.window.showErrorMessage(message);
+    return;
+  }
+  // Execute the Python script
+  return execFile(python, ['-m', 'string-fixer'].concat(...(cmdArgs || [])), {
+    cwd: execFolder,
+  });
+}
+
 export function activate(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand(
     'string-fixer.run',
     async () => {
-      let execFolder: string;
-      let python: string;
-      try {
-        execFolder = getExecFolder();
-        python = await getPythonExe();
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'There was an unidentified error';
-        vscode.window.showErrorMessage(message);
+      const result = await runStringFixer();
+      if (result?.stderr) {
+        vscode.window.showErrorMessage(`Error: ${stderr}`);
         return;
       }
-      // Execute the Python script
-      childProcess.execFile(
-        python,
-        ['-m', 'string-fixer'],
-        { cwd: execFolder },
-        async (err, stdout, stderr) => {
-          if (err) {
-            vscode.window.showErrorMessage(`Error: ${err.message}`);
-            return;
-          }
-        },
-      );
     },
   );
   context.subscriptions.push(disposable);
+
+  vscode.languages.registerDocumentFormattingEditProvider('python', {
+    async provideDocumentFormattingEdits(
+      document: vscode.TextDocument,
+    ): Promise<vscode.TextEdit[]> {
+      const tweaks: vscode.TextEdit[] = [];
+
+      const result = await runStringFixer(['-d', '-t', document.fileName]);
+
+      if (result?.stderr) {
+        let index = -1;
+        for (const line of result?.stderr.split('\n')) {
+          index++;
+          if (!line.length) {
+            continue;
+          }
+          const current = document.lineAt(index);
+          if (line !== current.text) {
+            tweaks.push(vscode.TextEdit.replace(current.range, line));
+          }
+        }
+      }
+      return tweaks;
+    },
+  });
 }
 
 // This method is called when your extension is deactivated
