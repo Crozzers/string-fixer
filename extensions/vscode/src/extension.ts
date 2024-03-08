@@ -66,6 +66,8 @@ export function activate(context: vscode.ExtensionContext) {
     async provideDocumentFormattingEdits(
       document: vscode.TextDocument,
     ): Promise<vscode.TextEdit[]> {
+      // save doc before running so that process can read the current file version
+      await document.save();
       const tweaks: vscode.TextEdit[] = [];
 
       const result = await runStringFixer(['-d', '-t', document.fileName]);
