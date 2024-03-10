@@ -11,21 +11,17 @@ Neither project seems likely to add the option for entirely single-quoted code, 
 
 ## Usage
 
+### CLI
+
 ```bash
 # run against single file
-python lib/src/main.py --target my_file.py
+python -m string-fixer --target my_file.py
 # run against directory
-python lib/src/main.py --target lib/src/
+python -m string-fixer --target lib/src/
 # run against working dir
-python lib/src/main.py
+python -m string-fixer
 ```
 
+### IDE Plugins
 
-## Planned features
-
-- PyPI package
-- Smarter string replacement
-- Controls over what types of string get replaced
-    - Docstrings
-    - Multi-line string literals
-    - Single line string literals
+This project has an accompanying [VSCode extension](https://github.com/Crozzers/string-fixer/tree/main/extensions/vscode).

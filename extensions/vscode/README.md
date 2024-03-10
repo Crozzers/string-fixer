@@ -4,7 +4,8 @@ This folder hosts the `string-fixer` VSCode extension, which just provides an ea
 
 ## Features
 
-Run `string-fixer: Run` in the command pallette (`CTRL`+`Shift`+`p`)
+- Run string-fixer against your workspace using the `string-fixer: Run` command in the command pallette (`CTRL`+`Shift`+`p`).
+- Use string-fixer as a Python formatter
 
 ## Requirements
 
@@ -16,3 +17,4 @@ Your selected interpreter also needs to have `string-fixer` installed as a modul
 This extension contributes the following settings:
 
 * `string-fixer.folder`: The folder containing the `pyproject.toml` file used to configure the library. Defaults to the current workspace folder.
+* `string-fixer.preFormatter`: Run another formatting extension against the code before running string-fixer. Ruff and Black are supported. Defaults to doing nothing.
