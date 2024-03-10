@@ -1,6 +1,6 @@
 import os
 import re
-from functools import cache
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, TypedDict, Union
 
@@ -102,7 +102,7 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
     return config
 
 
-@cache
+@lru_cache
 def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
     '''
     Loads closest config file to `path` in directory tree, up to `limit`.
