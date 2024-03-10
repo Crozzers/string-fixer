@@ -43,7 +43,7 @@ async function runStringFixer(cmdArgs?: string[]) {
     vscode.window.showErrorMessage(message);
     return;
   }
-  const args = ['-m', 'string-fixer', '-c', execFolder].concat(
+  const args = ['-m', 'string_fixer', '-c', execFolder].concat(
     ...(cmdArgs || []),
   );
   logger?.info(`running string-fixer with args: ${args}`);
