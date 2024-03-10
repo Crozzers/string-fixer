@@ -2,8 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
-
-from . import __main__ as string_fixer
+import string_fixer
 
 CASES_DIR = Path(__file__).parent / 'cases'
 SNAPSHOT_DIR = Path(__file__).parent / 'snapshots'

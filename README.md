@@ -15,11 +15,11 @@ Neither project seems likely to add the option for entirely single-quoted code, 
 
 ```bash
 # run against single file
-python -m string-fixer --target my_file.py
+python -m string_fixer --target my_file.py
 # run against directory
-python -m string-fixer --target lib/src/
+python -m string_fixer --target lib/src/
 # run against working dir
-python -m string-fixer
+python -m string_fixer
 ```
 
 ### IDE Plugins

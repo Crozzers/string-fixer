@@ -1,5 +1,5 @@
 [project]
-name = "string-fixer"
+name = "string_fixer"
 description = "Change quote style in Python files"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -33,14 +33,23 @@ test = [
     "pytest",
     "pytest-snapshot"
 ]
-all = ["string-fixer[dev,test]"]
+dist = [
+    "build",
+    "setuptools",
+    "wheel",
+    "twine"
+]
+all = ["string_fixer[dev,test]"]
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = { attr = "string-fixer._version.__version__" }
+version = { attr = "string_fixer._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["string_fixer*"]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -58,7 +67,7 @@ skip-magic-trailing-comma = true
 line-ending = "lf"
 
 [tool.string-fixer]
-target="string-fixer"
+target="string_fixer"
 dry_run=false
 ignore = [
     "test/**"
