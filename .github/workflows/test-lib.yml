@@ -5,9 +5,8 @@ on:
       - gh-pages
     paths:
       - lib/string-fixer/**
+      - '!lib/string-fixer/_version.py'
       - lib/test
-    paths-ignore:
-      - lib/string-fixer/_version.py
   pull_request:
     branches-ignore:
       - gh-pages
