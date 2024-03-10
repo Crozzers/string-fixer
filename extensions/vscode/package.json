@@ -29,6 +29,12 @@
           "default": null,
           "markdownDescription": "Folder containing the pyproject.toml configuration file",
           "type": "string"
+        },
+        "string-fixer.preFormatter": {
+          "default": null,
+          "markdownDescription": "The formatter to trigger before running string-fixer",
+          "type": ["string", "null"],
+          "enum": ["ruff", "black"]
         }
       }
     }
