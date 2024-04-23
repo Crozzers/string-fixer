@@ -11,11 +11,15 @@ on:
         description: Release to Test PyPI
         type: boolean
         default: false
+      vscode:
+        description: Release to VSCode marketplace
+        type: boolean
+        default: false
 
 jobs:
   test:
     uses: ./.github/workflows/test-lib.yml
-  build:
+  build_wheel:
     needs: [test]
     runs-on: ubuntu-latest
     steps:
@@ -41,19 +45,30 @@ jobs:
           path: |
             lib/dist/string_fixer*.whl
             lib/dist/string_fixer*.tar.gz
-  release:
-    needs: [build]
+  release_wheel:
+    needs: [build_wheel]
     runs-on: ubuntu-latest
     environment: release-env
     steps:
-      - name: Download artifact
+      - name: Download wheels
         uses: actions/download-artifact@v4
         with:
           name: packages
+      - name: Download vsix
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Set up NodeJS 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install publishing dependencies
+        run: |
+          npm i @vscode/vsce -g
       - name: Publish to Test PyPI
         if: ${{ inputs.testpypi == true }}
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -67,3 +82,40 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: ./
+      - name: Publish to VSCode
+        if: ${{ inputs.vscode == true || github.event_name == 'push' }}
+        run: |
+          vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
+
+  release_vsix:
+    needs: [release_wheel]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up NodeJS 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        working-directory: extension/vscode/
+        run: |
+          npm ci --include=dev
+          npm i -g @vscode/vsce
+      - name: Build
+        working-directory: extension/vscode/
+        run: |
+          # copy in license from main repo
+          cp ../../LICENSE ./
+          npx vsce package
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: |
+            extension/vscode/string-fixer*.vsix
+      - name: Publish to VSCode
+        if: ${{ inputs.vscode == true || github.event_name == 'push' }}
+        working-directory: extension/vscode/
+        run: |
+          vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}

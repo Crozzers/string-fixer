@@ -16,6 +16,16 @@
   "activationEvents": [
     "onLanguage:python"
   ],
+  "publisher": "Crozzers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Crozzers/string-fixer"
+  },
+  "bugs": {
+    "url": "https://github.com/Crozzers/string-fixer/issues",
+    "email": "captaincrozzers@gmail.com"
+  },
+  "license": "https://github.com/Crozzers/string-fixer/blob/main/LICENSE",
   "contributes": {
     "commands": [
       {
@@ -33,8 +43,14 @@
         "string-fixer.preFormatter": {
           "default": null,
           "markdownDescription": "The formatter to trigger before running string-fixer",
-          "type": ["string", "null"],
-          "enum": ["ruff", "black"]
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "ruff",
+            "black"
+          ]
         }
       }
     }
