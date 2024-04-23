@@ -77,6 +77,7 @@ jobs:
   release_vsix:
     needs: [release_wheel]
     runs-on: ubuntu-latest
+    environment: release-env
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -85,12 +86,12 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        working-directory: extension/vscode/
+        working-directory: extensions/vscode/
         run: |
           npm ci --include=dev
           npm i -g @vscode/vsce
       - name: Build
-        working-directory: extension/vscode/
+        working-directory: extensions/vscode/
         run: |
           # copy in license from main repo
           cp ../../LICENSE ./
@@ -100,9 +101,9 @@ jobs:
         with:
           name: vsix
           path: |
-            extension/vscode/string-fixer*.vsix
+            extensions/vscode/string-fixer*.vsix
       - name: Publish to VSCode
         if: ${{ inputs.vscode == true || github.event_name == 'push' }}
-        working-directory: extension/vscode/
+        working-directory: extensions/vscode/
         run: |
           vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
