@@ -36,6 +36,8 @@ jobs:
         working-directory: lib/
       - name: Build
         run: |
+          # copy in readme file
+          cp ../README.md ./
           python -m build
         working-directory: lib/
       - name: Upload artifact
