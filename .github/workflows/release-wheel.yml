@@ -56,21 +56,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packages
-      - name: Download vsix
-        uses: actions/download-artifact@v4
-        with:
-          name: vsix
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Set up NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install publishing dependencies
-        run: |
-          npm i @vscode/vsce -g
       - name: Publish to Test PyPI
         if: ${{ inputs.testpypi == true }}
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -84,10 +73,6 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: ./
-      - name: Publish to VSCode
-        if: ${{ inputs.vscode == true || github.event_name == 'push' }}
-        run: |
-          vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
 
   release_vsix:
     needs: [release_wheel]
