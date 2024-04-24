@@ -10,11 +10,14 @@ This folder hosts the `string-fixer` VSCode extension, which just provides an ea
 ## Requirements
 
 `ms-python.python` extension is required.
-Your selected interpreter also needs to have `string-fixer` installed as a module
+Your selected interpreter also needs to have `string-fixer` installed as a module. You can install it by running `python -m pip install string-fixer`.
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-* `string-fixer.folder`: The folder containing the `pyproject.toml` file used to configure the library. Defaults to the current workspace folder.
-* `string-fixer.preFormatter`: Run another formatting extension against the code before running string-fixer. Ruff and Black are supported. Defaults to doing nothing.
+* `string-fixer.folder`
+  - The folder containing the `pyproject.toml` file used to configure the library. Defaults to the current workspace folder.
+  - This should be relative to the root of the workspace folder.
+* `string-fixer.preFormatter`
+  - Run another formatting extension against the code before running string-fixer. Ruff and Black are supported. Defaults to doing nothing.

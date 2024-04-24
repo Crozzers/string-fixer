@@ -2,20 +2,22 @@ import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import { PythonExtension } from '@vscode/python-extension';
 import { promisify } from 'util';
-import { stderr } from 'process';
+import { join } from 'path';
 
 const execFile = promisify(childProcess.execFile);
 
 function getExecFolder(): string {
   const config = vscode.workspace.getConfiguration('string-fixer');
 
+  if (!vscode.workspace.workspaceFolders) {
+    throw new Error('no workspace open');
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+
   const folder: string | undefined = config.get('folder');
   // do this rather than `config.has` because typescript compiler
   if (folder) {
-    return folder;
-  }
-  if (vscode.workspace.workspaceFolders) {
-    return vscode.workspace.workspaceFolders[0].uri.fsPath;
+    return join(workspaceFolder, folder);
   }
   throw new Error('cannot find suitable execution folder');
 }
@@ -43,10 +45,10 @@ async function runStringFixer(cmdArgs?: string[]) {
     vscode.window.showErrorMessage(message);
     return;
   }
-  const args = ['-m', 'string_fixer', '-c', execFolder].concat(
-    ...(cmdArgs || []),
-  );
+  const args = ['-m', 'string_fixer'].concat(...(cmdArgs || []));
   logger?.info(`running string-fixer with args: ${args}`);
+  logger?.info(`pythonExe:`, python);
+  logger?.info(`execFolder:`, execFolder);
   // Execute the Python script
   return execFile(python, args, {
     cwd: execFolder,

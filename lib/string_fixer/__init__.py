@@ -99,7 +99,7 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
             ignore.extend(file.parent.glob(pattern))
         config['ignore'] = ignore
 
-    return config
+    return config  # type: ignore
 
 
 @lru_cache
