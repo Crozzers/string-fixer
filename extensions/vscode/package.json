@@ -2,7 +2,7 @@
   "name": "string-fixer",
   "displayName": "string-fixer",
   "description": "Replace double quotes with single quotes in Python files",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.87.0"
   },
