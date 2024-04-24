@@ -1,0 +1,50 @@
+name: Release VSCode extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      vscode:
+        description: Release to VSCode marketplace
+        type: boolean
+        default: false
+
+jobs:
+  release_vsix:
+    runs-on: ubuntu-latest
+    environment: release-env
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.getversion.outputs.gitRef }}
+
+      - name: Set up NodeJS 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: extensions/vscode/
+        run: |
+          npm ci --include=dev
+          npm i -g @vscode/vsce
+
+      - name: Build
+        working-directory: extensions/vscode/
+        run: |
+          # copy in license from main repo
+          cp ../../LICENSE ./
+          npx vsce package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: |
+            extensions/vscode/string-fixer*.vsix
+
+      - name: Publish to VSCode
+        if: ${{ inputs.vscode == true || github.event_name == 'push' }}
+        working-directory: extensions/vscode/
+        run: |
+          vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}

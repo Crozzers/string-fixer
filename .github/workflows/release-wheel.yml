@@ -1,4 +1,4 @@
-name: Release on tag
+name: Release wheel
 
 on:
   workflow_dispatch:
@@ -11,10 +11,6 @@ on:
         description: Release to Test PyPI
         type: boolean
         default: false
-      vscode:
-        description: Release to VSCode marketplace
-        type: boolean
-        default: false
 
 jobs:
   test:
@@ -25,21 +21,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
+
       - name: Install dependencies
         run: |
           python -m pip install .[dist]
         working-directory: lib/
+
       - name: Build
         run: |
           # copy in readme file
           cp ../README.md ./
           python -m build
         working-directory: lib/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -47,6 +47,7 @@ jobs:
           path: |
             lib/dist/string_fixer*.whl
             lib/dist/string_fixer*.tar.gz
+
   release_wheel:
     needs: [build_wheel]
     runs-on: ubuntu-latest
@@ -56,10 +57,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packages
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Publish to Test PyPI
         if: ${{ inputs.testpypi == true }}
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -67,43 +70,10 @@ jobs:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           packages-dir: ./
           repository-url: https://test.pypi.org/legacy/
+
       - name: Publish to PyPI
         if: ${{ inputs.pypi == true || github.event_name == 'push' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: ./
-
-  release_vsix:
-    needs: [release_wheel]
-    runs-on: ubuntu-latest
-    environment: release-env
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up NodeJS 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install dependencies
-        working-directory: extensions/vscode/
-        run: |
-          npm ci --include=dev
-          npm i -g @vscode/vsce
-      - name: Build
-        working-directory: extensions/vscode/
-        run: |
-          # copy in license from main repo
-          cp ../../LICENSE ./
-          npx vsce package
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix
-          path: |
-            extensions/vscode/string-fixer*.vsix
-      - name: Publish to VSCode
-        if: ${{ inputs.vscode == true || github.event_name == 'push' }}
-        working-directory: extensions/vscode/
-        run: |
-          vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
