@@ -3,20 +3,59 @@ name: Release VSCode extension
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: The version to publish
+        required: true
       vscode:
         description: Release to VSCode marketplace
         type: boolean
         default: false
 
+env:
+  TAG_PREFIX: vscode/
+
 jobs:
-  release_vsix:
+  bump_version:
     runs-on: ubuntu-latest
     environment: release-env
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up NodeJS 20
+        uses: actions/setup-node@v4
         with:
-          ref: ${{ needs.getversion.outputs.gitRef }}
+          node-version: 20
+
+      - name: Edit package.json
+        working-directory: extensions/vscode/
+        run: |
+          npm version ${{ github.event.inputs.version }}
+
+      - name: Edit changelog
+        working-directory: extensions/vscode/
+        run: ./.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
+
+      - name: Commit and tag
+        run: |
+          git config --global user.name "Github Actions [Bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+
+          git add extensions/vscode/
+          git commit -m "Bump $TAG_PREFIX${{ github.event.inputs.version }}"
+          git tag $TAG_PREFIX${{ github.event.inputs.version }}
+
+          git push
+          git push --tags
+
+  release_vsix:
+    runs-on: ubuntu-latest
+    environment: release-env
+    needs: bump_version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up NodeJS 20
         uses: actions/setup-node@v4
@@ -34,6 +73,8 @@ jobs:
         run: |
           # copy in license from main repo
           cp ../../LICENSE ./
+          # remove "Unreleased" header from deployed package
+          perl -i -p0e 's/## \[Unreleased\]\n\n\n//se' CHANGELOG.md
           npx vsce package
 
       - name: Upload artifact
