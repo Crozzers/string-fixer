@@ -32,7 +32,6 @@ jobs:
     uses: ./.github/workflows/test-lib.yml
 
   bump_version:
-    if: ${{ inputs.bumpVersion }}
     needs: [test]
     runs-on: ubuntu-latest
     environment: release-env
@@ -54,6 +53,7 @@ jobs:
           VERSION: ${{ inputs.version }}
 
       - name: Commit and tag
+        if: ${{ inputs.bumpVersion }}
         run: |
           git config --global user.name "Github Actions [Bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG_PREFIX }}/${{ inputs.version }}
+          ref: ${{ env.TAG_PREFIX }}${{ inputs.version }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5

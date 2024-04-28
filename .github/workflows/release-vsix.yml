@@ -24,7 +24,6 @@ env:
 
 jobs:
   bump_version:
-    if: ${{ inputs.bumpVersion }}
     runs-on: ubuntu-latest
     environment: release-env
     steps:
@@ -48,6 +47,7 @@ jobs:
           VERSION: ${{ inputs.version }}
 
       - name: Commit and tag
+        if: ${{ inputs.bumpVersion }}
         run: |
           git config --global user.name "Github Actions [Bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -70,6 +70,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG_PREFIX }}${{ inputs.version }}
 
       - name: Set up NodeJS 20
         uses: actions/setup-node@v4
@@ -113,7 +115,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG_PREFIX }}/${{ inputs.version }}
+          ref: ${{ env.TAG_PREFIX }}${{ inputs.version }}
 
       - name: Download artifact
         uses: actions/download-artifact@v3
