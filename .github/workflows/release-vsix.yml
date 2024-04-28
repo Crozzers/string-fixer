@@ -38,7 +38,7 @@ jobs:
 
       - name: Edit changelog
         working-directory: extensions/vscode/
-        run: ../../.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
+        run: ../../.github/scripts/edit-changelog.sh ${{ github.event.inputs.version }} $TAG_PREFIX
 
       - name: Commit and tag
         run: |

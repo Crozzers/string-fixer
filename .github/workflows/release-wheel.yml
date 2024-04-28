@@ -27,6 +27,7 @@ jobs:
     uses: ./.github/workflows/test-lib.yml
 
   bump_version:
+    needs: [test]
     runs-on: ubuntu-latest
     environment: release-env
     steps:
@@ -40,7 +41,7 @@ jobs:
 
       - name: Edit changelog
         working-directory: lib/
-        run: ../.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
+        run: ../.github/scripts/edit-changelog.sh ${{ github.event.inputs.version }} $TAG_PREFIX
 
       - name: Commit and tag
         run: |
@@ -56,7 +57,7 @@ jobs:
           git push --tags
 
   build_wheel:
-    needs: [test]
+    needs: [bump_version]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
