@@ -10,6 +10,10 @@ on:
         description: Release to VSCode marketplace
         type: boolean
         default: false
+      ghRelease:
+        description: Create a github release
+        type: boolean
+        default: false
 
 env:
   TAG_PREFIX: vscode/
@@ -27,14 +31,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Edit package.json
+      - name: Set version number
         working-directory: extensions/vscode/
         run: |
           npm version ${{ github.event.inputs.version }}
 
       - name: Edit changelog
         working-directory: extensions/vscode/
-        run: ./.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
+        run: ../../.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
 
       - name: Commit and tag
         run: |
@@ -50,6 +54,7 @@ jobs:
           git push --tags
 
   release_vsix:
+    if: ${{ github.event.inputs.vscode }}
     runs-on: ubuntu-latest
     environment: release-env
     needs: bump_version
@@ -89,3 +94,32 @@ jobs:
         working-directory: extensions/vscode/
         run: |
           vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
+
+  release_github:
+    if: ${{ github.event.inputs.ghRelease }}
+    runs-on: ubuntu-latest
+    environment: release-env
+    needs: release_vsix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: vsix
+          path: dist
+
+      - name: Extract release notes
+        uses: ffurrer2/extract-release-notes@v2
+        with:
+          changelog_file: extensions/vscode/CHANGELOG.md
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
+          draft: false
+          files: dist/*.vsix
+          name: vscode v${{ github.event.inputs.version }}
+          tag_name: ${{ env.TAG_PREFIX }}${{ github.event.inputs.version }}

@@ -3,18 +3,58 @@ name: Release wheel
 on:
   workflow_dispatch:
     inputs:
-      pypi:
-        description: Release to PyPI
-        type: boolean
-        default: true
+      version:
+        description: The version to publish
+        required: true
       testpypi:
         description: Release to Test PyPI
         type: boolean
+        default: true
+      pypi:
+        description: Release to PyPI
+        type: boolean
         default: false
+      ghRelease:
+        description: Create a github release
+        type: boolean
+        default: false
+
+env:
+  TAG_PREFIX: lib/
 
 jobs:
   test:
     uses: ./.github/workflows/test-lib.yml
+
+  bump_version:
+    runs-on: ubuntu-latest
+    environment: release-env
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version number
+        working-directory: lib/
+        run: |
+          sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'$version'\3|g' string_fixer/_version.py
+
+      - name: Edit changelog
+        working-directory: lib/
+        run: ../.github/scripts/edit-changelog.md ${{ github.event.inputs.version }} $TAG_PREFIX
+
+      - name: Commit and tag
+        run: |
+          git config --global user.name "Github Actions [Bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+
+          git add lib/
+          git commit -m "Bump $TAG_PREFIX${{ github.event.inputs.version }}"
+          git tag $TAG_PREFIX${{ github.event.inputs.version }}
+
+          git push
+          git push --tags
+
   build_wheel:
     needs: [test]
     runs-on: ubuntu-latest
@@ -77,3 +117,32 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: ./
+
+  release_github:
+    if: ${{ github.event.inputs.ghRelease }}
+    runs-on: ubuntu-latest
+    environment: release-env
+    needs: release_wheel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: dist
+
+      - name: Extract release notes
+        uses: ffurrer2/extract-release-notes@v2
+        with:
+          changelog_file: lib/CHANGELOG.md
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
+          draft: false
+          files: dist/*
+          name: lib v${{ github.event.inputs.version }}
+          tag_name: ${{ env.TAG_PREFIX }}${{ github.event.inputs.version }}
