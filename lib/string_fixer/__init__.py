@@ -3,7 +3,7 @@ import re
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, TypedDict, Union
+from typing import Dict, List, Optional, TypedDict, Union
 
 import libcst as cst
 import tomli
@@ -29,7 +29,7 @@ DEFAULT_CONFIG: Config = {
 }
 
 
-class DocstringDoubleToSingle(cst.CSTTransformer):
+class QuoteTransformer(cst.CSTTransformer):
     def __init__(self, target_python: Optional[float] = None):
         '''
         Args:
@@ -49,14 +49,25 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
         return escapes + (('\\' + quote[0]) * len(quote))
 
     def leave_SimpleString(
-        self, original_node: cst.SimpleString, updated_node: cst.SimpleString
+        self, original_node: cst.SimpleString, updated_node: cst.SimpleString,
+        quote_override: Optional[str] = None
     ) -> cst.SimpleString:
-        if '"' not in original_node.quote:
-            return original_node
+        '''
+        Args:
+            original_node: the node being visited
+            updated_node: a deep clone of `original_node` where transformations can be applied
+            quote_override: override what kind of quote we are assigning to the string. Useful for
+                nested f-strings where quote re-use is not allowed
+        '''
+        quote = quote_override or '\''
+        anti = '\'' if quote[0] == '"' else '"'
+        quote_len = max(len(quote), len(updated_node.quote))
+
+        if anti not in original_node.quote:
+            return updated_node
 
         # remove start and end quotes
         text = updated_node.value[len(updated_node.quote) : -len(updated_node.quote)]
-        quote_len = len(updated_node.quote)
 
         text = re.sub(
             r'(\\*)(["\']{%d,})' % quote_len,
@@ -65,18 +76,46 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
             flags=re.MULTILINE,
         )
 
-        new_quote = '\'' * len(updated_node.quote)
+        new_quote = quote[0] * quote_len
         return updated_node.with_changes(value=f'{new_quote}{text}{new_quote}')
 
     def leave_FormattedString(
-        self, original_node: cst.FormattedString, updated_node: cst.FormattedString
+        self, original_node: cst.FormattedString, updated_node: cst.FormattedString,
+        depth = 1, meta: Dict[str, int] = {}
     ) -> cst.BaseExpression:
-        if self._target_python < 3.12:
-            # f-string quoting was alot stricter in prev versions
+        '''
+        Args:
+            original_node: the node being visited
+            updated_node: a deep clone of `original_node` where transformations can be applied
+            depth: current recursion depth
+            meta: dict used to keep track of info across recursions (eg: max recursion depth)
+                without corrupting the return signature
+        '''
+        meta['max_depth'] = max(meta.get('max_depth', 1), depth)
+
+        def get_quote(depth):
+            '''Get appropriate quote given the f-string nest depth'''
+            if meta['max_depth'] <= 2:
+                quote_order = ['\'', '"']
+            elif meta['max_depth'] == 3:
+                quote_order = ["'''", "'", '"']
+            else:
+                quote_order = ["'''", '"""', "'", '"']
+
+            return quote_order[depth - 1] if self._target_python <= 3.11 else '\''
+
+        if self._target_python < 3.12 and depth > 4:
+            # quit after 4 levels on <=3.11 because you can't reuse quotes in f-string expressions.
+            # since there are only 4 kinds of quotes (single, double and triple versions of each)
+            # there can only be 4 levels (see also point 3 in https://peps.python.org/pep-0701/#rationale)
             return super().leave_FormattedString(original_node, updated_node)
 
         new_parts = []
         for part in original_node.parts:
+            # it would be better to split this block into the corresponding `leave_<NodeType>`.
+            # Each nested fstring gets visited separately before the top-level one, meaning we will
+            # traverse it multiple times. However, we may lose the depth tracking info that way.
+            # Performance not critical atm since I haven't tested a large file. Something to look into
             if isinstance(part, cst.FormattedStringText):
                 value = re.sub(
                     r'(\\*)(["\']{%d,})' % 1,
@@ -91,7 +130,7 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
                     new_parts.append(
                         part.with_changes(
                             expression=self.leave_FormattedString(
-                                expression, expression.deep_clone()
+                                expression, expression.deep_clone(), depth + 1, meta
                             )
                         )
                     )
@@ -106,7 +145,7 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
                         new_value = value
                         if isinstance(value, cst.SimpleString):
                             new_value = self.leave_SimpleString(
-                                value, value.deep_clone()
+                                value, value.deep_clone(), get_quote(depth + 1)
                             )
                         elif isinstance(value, FormattedString):
                             new_value = self.leave_FormattedString(
@@ -123,17 +162,26 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
                             expression=expression.with_changes(slice=new_slices)
                         )
                     )
+                elif isinstance(expression, cst.SimpleString):
+                    new_parts.append(
+                        part.with_changes(
+                            expression=self.leave_SimpleString(
+                                expression, expression.deep_clone(), get_quote(depth + 1)
+                            )
+                        )
+                    )
                 else:
                     new_parts.append(part)
             else:
                 new_parts.append(part)
 
-        return updated_node.with_changes(parts=new_parts, start='f\'', end='\'')
+        quote = get_quote(depth)
+        return updated_node.with_changes(parts=new_parts, start=f'f{quote}', end=quote)
 
 
-def replace_docstring_double_with_single_quotes(code: str) -> str:
+def replace_quotes(code: str, target_python: Optional[float] = None) -> str:
     module = parse_module(code)
-    transformer = DocstringDoubleToSingle()
+    transformer = QuoteTransformer(target_python)
     modified_module = module.visit(transformer)
     return modified_module.code
 
@@ -203,7 +251,7 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
     with open(file) as f:
         code = f.read()
 
-    modified = replace_docstring_double_with_single_quotes(code)
+    modified = replace_quotes(code, config['target_version'])
 
     if config.get('dry_run', False):
         print('---')

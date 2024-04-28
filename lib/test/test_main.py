@@ -1,6 +1,5 @@
 import os
 import platform
-import re
 import sys
 from pathlib import Path
 
@@ -46,6 +45,6 @@ def test_snapshots(snapshot, case: str):
         input_code = f.read()
 
     snapshot.assert_match(
-        string_fixer.replace_docstring_double_with_single_quotes(input_code),
+        string_fixer.replace_quotes(input_code),
         output_file,
     )

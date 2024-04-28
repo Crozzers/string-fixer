@@ -67,8 +67,9 @@ skip-magic-trailing-comma = true
 line-ending = "lf"
 
 [tool.string-fixer]
-target="string_fixer"
-dry_run=false
+target = "string_fixer"
+dry_run = false
 ignore = [
     "test/**"
 ]
+target_version = 3.11
