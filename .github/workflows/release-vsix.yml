@@ -24,7 +24,6 @@ env:
 
 jobs:
   bump_version:
-    if: ${{ github.event.inputs.bumpVersion }}
     runs-on: ubuntu-latest
     environment: release-env
     steps:
@@ -48,6 +47,7 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
 
       - name: Commit and tag
+        if: ${{ github.event.inputs.bumpVersion }}
         run: |
           git config --global user.name "Github Actions [Bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
