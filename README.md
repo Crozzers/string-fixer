@@ -25,3 +25,31 @@ python -m string_fixer
 ### IDE Plugins
 
 This project has an accompanying [VSCode extension](https://github.com/Crozzers/string-fixer/tree/main/extensions/vscode).
+
+
+## Configuration
+
+Configuration is done via the `pyproject.toml` file:
+```toml
+[tool.string-fixer]
+# file or folder to format
+target = "./"
+# set to true to print planned changes but not modify any files (overrides `output` config)
+dry_run = false
+# write a copy of the files to this directory, rather than modifying them inplace
+output = "./"
+# list of glob patterns for files to ignore
+ignore = []
+# extend and override options in another pyproject.toml file
+extends = ""
+# python version to target for compatibility (defaults to current python version)
+target_version = 3.12
+```
+
+All file paths are resolved relative to the `pyproject.toml`'s location.
+
+
+## See Also
+
+- [VSCode Extension](https://marketplace.visualstudio.com/items?itemName=Crozzers.string-fixer) ([source](https://github.com/Crozzers/string-fixer/tree/main/extensions/vscode))
+- [PyPI package](https://pypi.org/project/string-fixer/) ([source](https://github.com/Crozzers/string-fixer/tree/main/lib))

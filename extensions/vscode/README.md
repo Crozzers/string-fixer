@@ -1,6 +1,6 @@
 # string-fixer VSCode Extension
 
-This folder hosts the `string-fixer` VSCode extension, which just provides an easy way to run `string-fixer` through your IDE.
+This folder hosts the [`string-fixer` VSCode extension](https://marketplace.visualstudio.com/items?itemName=Crozzers.string-fixer), which just provides an easy way to run `string-fixer` through your IDE.
 
 ## Features
 
