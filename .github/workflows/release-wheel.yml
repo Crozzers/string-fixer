@@ -38,11 +38,15 @@ jobs:
       - name: Set version number
         working-directory: lib/
         run: |
-          sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'${{ github.event.inputs.version }}'\3|g' string_fixer/_version.py
+          sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'$VERSION'\3|g' string_fixer/_version.py
+        env:
+          VERSION: ${{ github.event.inputs.version }}
 
       - name: Edit changelog
         working-directory: lib/
-        run: ../.github/scripts/edit-changelog.sh ${{ github.event.inputs.version }} $TAG_PREFIX
+        run: ../.github/scripts/edit-changelog.sh "$VERSION" "$TAG_PREFIX"
+        env:
+          VERSION: ${{ github.event.inputs.version }}
 
       - name: Commit and tag
         run: |
@@ -51,11 +55,13 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
 
           git add lib/
-          git commit -m "Bump $TAG_PREFIX${{ github.event.inputs.version }}"
-          git tag $TAG_PREFIX${{ github.event.inputs.version }}
+          git commit -m "Bump $TAG_PREFIX$VERSION"
+          git tag "$TAG_PREFIX$VERSION"
 
           git push
           git push --tags
+        env:
+          VERSION: ${{ github.event.inputs.version }}
 
   build_wheel:
     needs: [bump_version]

@@ -31,3 +31,7 @@ awk -v prev="$TAG_PREFIX$prevVersion" -v version="$TAG_PREFIX$version" \
     ' CHANGELOG.md > CHANGELOG.md.temp
 
 mv CHANGELOG.md.temp CHANGELOG.md
+
+echo "new changelog:"
+echo "--------------"
+cat CHANGELOG.md
