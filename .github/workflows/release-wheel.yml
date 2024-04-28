@@ -149,6 +149,7 @@ jobs:
           path: dist
 
       - name: Extract release notes
+        id: extract-release-notes
         uses: ffurrer2/extract-release-notes@v2
         with:
           changelog_file: lib/CHANGELOG.md
