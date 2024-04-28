@@ -23,10 +23,12 @@ mv CHANGELOG.md.temp CHANGELOG.md
 # update links
 sed -ri 's|(\[unreleased\]: .*compare\/'$TAG_PREFIX')(.*)(\.\.\.HEAD)|\1'$version'\3|g' CHANGELOG.md
 
-awk -v prev="$TAG_PREFIX$prevVersion" -v version="$TAG_PREFIX$version" \
+awk -v prev="$TAG_PREFIX$prevVersion" \
+    -v prefix="$TAG_PREFIX" \
+    -v version="$version" \
     -v repo="$GITHUB_REPOSITORY" '
     1;/\[unreleased\]: /{
-        print "[" version "]: https://github.com/Crozzers/string-fixer/compare/" prev "..." version
+        print "[" version "]: https://github.com/Crozzers/string-fixer/compare/" prev "..." prefix version
     }
     ' CHANGELOG.md > CHANGELOG.md.temp
 
