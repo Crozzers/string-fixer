@@ -5,6 +5,7 @@ on:
     inputs:
       version:
         description: The version to publish
+        type: string
         required: true
       testpypi:
         description: Release to Test PyPI
@@ -37,7 +38,7 @@ jobs:
       - name: Set version number
         working-directory: lib/
         run: |
-          sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'$version'\3|g' string_fixer/_version.py
+          sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'${{ github.event.inputs.version }}'\3|g' string_fixer/_version.py
 
       - name: Edit changelog
         working-directory: lib/
