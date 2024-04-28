@@ -1,11 +1,11 @@
+'''
+Collection of python version agnostic f-string related tests.
+
+These tests should result in the same output regardless of the python version being used.
+'''
+
 abc = "123"
 
 normal = f"some string {abc}"
 
-some_dict = {
-    "a": 0,
-    "b": 1
-}
-
-nested_classic = f"value: {some_dict['a']}"
-nested_classic2 = f'value: {some_dict["a"]}'
+normal_with_other_stuff = f"some 'quotes' and such: '{abc}' and '''other'''"

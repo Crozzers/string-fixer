@@ -1,12 +1,13 @@
 import os
 import re
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, TypedDict, Union
 
 import libcst as cst
 import tomli
-from libcst import parse_module
+from libcst import FormattedString, parse_module
 
 
 class Config(TypedDict):
@@ -15,6 +16,7 @@ class Config(TypedDict):
     output: Optional[Path]
     ignore: Optional[List[Path]]
     extends: Optional[Path]
+    target_version: Optional[float]
 
 
 DEFAULT_CONFIG: Config = {
@@ -23,10 +25,18 @@ DEFAULT_CONFIG: Config = {
     'output': None,
     'ignore': None,
     'extends': None,
+    'target_version': float(f'{sys.version_info.major}.{sys.version_info.minor}')
 }
 
 
 class DocstringDoubleToSingle(cst.CSTTransformer):
+    def __init__(self, target_python: Optional[float] = None):
+        '''
+        Args:
+            target_python: which version of python to target. Defaults to current version
+        '''
+        self._target_python = target_python or float(f'{sys.version_info.major}.{sys.version_info.minor}')
+
     def _escape_quote(self, match: re.Match) -> str:
         '''
         Handle quotes, check if they're escaped, escape them if not
@@ -57,6 +67,68 @@ class DocstringDoubleToSingle(cst.CSTTransformer):
 
         new_quote = '\'' * len(updated_node.quote)
         return updated_node.with_changes(value=f'{new_quote}{text}{new_quote}')
+
+    def leave_FormattedString(
+        self, original_node: cst.FormattedString, updated_node: cst.FormattedString
+    ) -> cst.BaseExpression:
+        if self._target_python < 3.12:
+            # f-string quoting was alot stricter in prev versions
+            return super().leave_FormattedString(original_node, updated_node)
+
+        new_parts = []
+        for part in original_node.parts:
+            if isinstance(part, cst.FormattedStringText):
+                value = re.sub(
+                    r'(\\*)(["\']{%d,})' % 1,
+                    self._escape_quote,
+                    part.value,
+                    flags=re.MULTILINE,
+                )
+                new_parts.append(part.with_changes(value=value))
+            elif isinstance(part, cst.FormattedStringExpression):
+                expression = part.expression
+                if isinstance(expression, FormattedString):
+                    new_parts.append(
+                        part.with_changes(
+                            expression=self.leave_FormattedString(
+                                expression, expression.deep_clone()
+                            )
+                        )
+                    )
+                elif isinstance(expression, cst.Subscript):
+                    new_slices = []
+                    for slice in expression.slice:
+                        if not isinstance(slice.slice, cst.Index):
+                            new_slices.append(slice)
+                            continue
+
+                        value = slice.slice.value
+                        new_value = value
+                        if isinstance(value, cst.SimpleString):
+                            new_value = self.leave_SimpleString(
+                                value, value.deep_clone()
+                            )
+                        elif isinstance(value, FormattedString):
+                            new_value = self.leave_FormattedString(
+                                value, value.deep_clone()
+                            )
+
+                        new_slices.append(slice.with_changes(
+                            slice=slice.slice.with_changes(
+                                value=new_value
+                            )
+                        ))
+                    new_parts.append(
+                        part.with_changes(
+                            expression=expression.with_changes(slice=new_slices)
+                        )
+                    )
+                else:
+                    new_parts.append(part)
+            else:
+                new_parts.append(part)
+
+        return updated_node.with_changes(parts=new_parts, start='f\'', end='\'')
 
 
 def replace_docstring_double_with_single_quotes(code: str) -> str:
