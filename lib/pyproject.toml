@@ -72,4 +72,4 @@ dry_run = false
 ignore = [
     "test/**"
 ]
-target_version = 3.11
+target_version = "3.11"

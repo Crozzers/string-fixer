@@ -16,7 +16,7 @@ class Config(TypedDict):
     output: Optional[Path]
     ignore: Optional[List[Path]]
     extends: Optional[Path]
-    target_version: Optional[float]
+    target_version: Optional[str]
 
 
 DEFAULT_CONFIG: Config = {
@@ -25,17 +25,27 @@ DEFAULT_CONFIG: Config = {
     'output': None,
     'ignore': None,
     'extends': None,
-    'target_version': float(f'{sys.version_info.major}.{sys.version_info.minor}')
+    'target_version': f'{sys.version_info.major}.{sys.version_info.minor}'
 }
 
 
+def version_lt(a: str, b: str):
+    '''
+    Minimal version check for python versions
+
+    Returns:
+        a < b
+    '''
+    return int(a.replace('.', '')) < int(b.replace('.', ''))
+
+
 class QuoteTransformer(cst.CSTTransformer):
-    def __init__(self, target_python: Optional[float] = None):
+    def __init__(self, target_python: Optional[str] = None):
         '''
         Args:
             target_python: which version of python to target. Defaults to current version
         '''
-        self._target_python = target_python or float(f'{sys.version_info.major}.{sys.version_info.minor}')
+        self._target_python = target_python or f'{sys.version_info.major}.{sys.version_info.minor}'
 
     def _escape_quote(self, match: re.Match) -> str:
         '''
@@ -102,9 +112,9 @@ class QuoteTransformer(cst.CSTTransformer):
             else:
                 quote_order = ["'''", '"""', "'", '"']
 
-            return quote_order[depth - 1] if self._target_python <= 3.11 else '\''
+            return quote_order[depth - 1] if version_lt(self._target_python, '3.12') else '\''
 
-        if self._target_python < 3.12 and depth > 4:
+        if version_lt(self._target_python, '3.12') and depth > 4:
             # quit after 4 levels on <=3.11 because you can't reuse quotes in f-string expressions.
             # since there are only 4 kinds of quotes (single, double and triple versions of each)
             # there can only be 4 levels (see also point 3 in https://peps.python.org/pep-0701/#rationale)
@@ -179,7 +189,7 @@ class QuoteTransformer(cst.CSTTransformer):
         return updated_node.with_changes(parts=new_parts, start=f'f{quote}', end=quote)
 
 
-def replace_quotes(code: str, target_python: Optional[float] = None) -> str:
+def replace_quotes(code: str, target_python: Optional[str] = None) -> str:
     module = parse_module(code)
     transformer = QuoteTransformer(target_python)
     modified_module = module.visit(transformer)
@@ -218,6 +228,10 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
         for pattern in config['ignore']:
             ignore.extend(file.parent.glob(pattern))
         config['ignore'] = ignore
+
+    if target_version := config.get('target_version', None):
+        if not isinstance(target_version, str):
+            raise TypeError('target_version must be string')
 
     return config  # type: ignore
 

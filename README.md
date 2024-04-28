@@ -43,7 +43,8 @@ ignore = []
 # extend and override options in another pyproject.toml file
 extends = ""
 # python version to target for compatibility (defaults to current python version)
-target_version = 3.12
+# this must be a string because `float("3.10") == 3.1`
+target_version = "3.12"
 ```
 
 All file paths are resolved relative to the `pyproject.toml`'s location.
