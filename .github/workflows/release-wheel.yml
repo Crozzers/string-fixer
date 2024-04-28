@@ -19,6 +19,10 @@ on:
         description: Create a github release
         type: boolean
         default: false
+      bumpVersion:
+        description: Bump the version file and create tag
+        type: boolean
+        default: false
 
 env:
   TAG_PREFIX: lib/
@@ -28,6 +32,7 @@ jobs:
     uses: ./.github/workflows/test-lib.yml
 
   bump_version:
+    if: ${{ github.event.inputs.bumpVersion }}
     needs: [test]
     runs-on: ubuntu-latest
     environment: release-env
@@ -69,6 +74,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG_PREFIX }}/${{ github.event.inputs.version }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
