@@ -32,6 +32,7 @@ jobs:
     uses: ./.github/workflows/test-lib.yml
 
   bump_version:
+    if: ${{ inputs.bumpVersion }}
     needs: [test]
     runs-on: ubuntu-latest
     environment: release-env
@@ -44,16 +45,15 @@ jobs:
         run: |
           sed -ri 's|(__version__\s*=\s*'"'"')(.*)('"'"')|\1'$VERSION'\3|g' string_fixer/_version.py
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
 
       - name: Edit changelog
         working-directory: lib/
         run: ../.github/scripts/edit-changelog.sh "$VERSION" "$TAG_PREFIX"
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
 
       - name: Commit and tag
-        if: ${{ github.event.inputs.bumpVersion }}
         run: |
           git config --global user.name "Github Actions [Bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -66,7 +66,7 @@ jobs:
           git push
           git push --tags
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
 
   build_wheel:
     needs: [bump_version]
@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG_PREFIX }}/${{ github.event.inputs.version }}
+          ref: ${{ env.TAG_PREFIX }}/${{ inputs.version }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -134,7 +134,7 @@ jobs:
           packages-dir: ./
 
   release_github:
-    if: ${{ github.event.inputs.ghRelease }}
+    if: ${{ inputs.ghRelease }}
     runs-on: ubuntu-latest
     environment: release-env
     needs: release_wheel
@@ -159,5 +159,5 @@ jobs:
           body: ${{ steps.extract-release-notes.outputs.release_notes }}
           draft: false
           files: dist/*
-          name: lib v${{ github.event.inputs.version }}
-          tag_name: ${{ env.TAG_PREFIX }}${{ github.event.inputs.version }}
+          name: lib v${{ inputs.version }}
+          tag_name: ${{ env.TAG_PREFIX }}${{ inputs.version }}

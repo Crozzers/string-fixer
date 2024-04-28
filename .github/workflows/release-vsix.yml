@@ -24,6 +24,7 @@ env:
 
 jobs:
   bump_version:
+    if: ${{ inputs.bumpVersion }}
     runs-on: ubuntu-latest
     environment: release-env
     steps:
@@ -44,10 +45,9 @@ jobs:
         working-directory: extensions/vscode/
         run: ../.github/scripts/edit-changelog.sh "$VERSION" "$TAG_PREFIX"
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
 
       - name: Commit and tag
-        if: ${{ github.event.inputs.bumpVersion }}
         run: |
           git config --global user.name "Github Actions [Bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -60,10 +60,10 @@ jobs:
           git push
           git push --tags
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ inputs.version }}
 
   release_vsix:
-    if: ${{ github.event.inputs.vscode }}
+    if: ${{ inputs.vscode }}
     runs-on: ubuntu-latest
     environment: release-env
     needs: bump_version
@@ -105,7 +105,7 @@ jobs:
           vsce publish -p ${{ secrets.VSCODE_API_TOKEN }}
 
   release_github:
-    if: ${{ github.event.inputs.ghRelease }}
+    if: ${{ inputs.ghRelease }}
     runs-on: ubuntu-latest
     environment: release-env
     needs: release_vsix
@@ -113,7 +113,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG_PREFIX }}/${{ github.event.inputs.version }}
+          ref: ${{ env.TAG_PREFIX }}/${{ inputs.version }}
 
       - name: Download artifact
         uses: actions/download-artifact@v3
@@ -132,5 +132,5 @@ jobs:
           body: ${{ steps.extract-release-notes.outputs.release_notes }}
           draft: false
           files: dist/*.vsix
-          name: vscode v${{ github.event.inputs.version }}
-          tag_name: ${{ env.TAG_PREFIX }}${{ github.event.inputs.version }}
+          name: vscode v${{ inputs.version }}
+          tag_name: ${{ env.TAG_PREFIX }}${{ inputs.version }}
