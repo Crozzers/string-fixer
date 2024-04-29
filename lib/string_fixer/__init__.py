@@ -304,3 +304,25 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
             os.makedirs(file.parent, exist_ok=True)
         with open(file, 'w') as f:
             f.write(modified)
+
+
+def file_is_ignored(file: Path, ignore: Optional[List[Path]], include: Optional[List[Path]]):
+    file = file.absolute()
+    is_ignored = False
+    is_included = False
+
+    if ignore:
+        for ignore_path in ignore:
+            ignore_path = ignore_path.absolute()
+            if ignore_path == file or ignore_path in file.parents:
+                is_ignored = True
+                break
+
+    if include:
+        for include_path in include:
+            include_path = include_path.absolute()
+            if include_path == file or include_path in file.parents:
+                is_included = True
+                break
+
+    return is_ignored and not is_included

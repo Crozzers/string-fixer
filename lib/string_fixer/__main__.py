@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import load_config_from_dir, process_file
+from . import file_is_ignored, load_config_from_dir, process_file
 from ._version import __version__
 
 if __name__ == '__main__':
@@ -72,9 +72,8 @@ if __name__ == '__main__':
             config = load_config_from_dir(root, limit=config_root)
             for file in files:
                 file = root / file
-                if file in (config.get('ignore') or []):
-                    if file not in (config.get('include') or []):
-                        continue
                 if not file.suffix == '.py':
+                    continue
+                if file_is_ignored(file, config['ignore'], config['include']):
                     continue
                 process_file(file, config, base_dir=target)

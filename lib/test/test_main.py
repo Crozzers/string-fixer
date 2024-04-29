@@ -48,3 +48,19 @@ def test_snapshots(snapshot, case: str):
         string_fixer.replace_quotes(input_code),
         output_file,
     )
+
+
+@pytest.mark.parametrize('file,ignore,include,result', [
+    ('./test.py', [], [], False),
+    ('./test.py', ['./test.py'], [], True),
+    ('./test.py', ['./test.py'], ['./test.py'], False),
+    ('./test.py', [], ['./test.py'], False),
+    ('./folder/test2.py', ['./folder'], ['./folder/test.py'], True),
+    ('./folder/test.py', ['./folder'], ['./folder/test.py'], False),
+])
+def test_file_is_ignored(file, ignore, include, result):
+    assert string_fixer.file_is_ignored(
+        Path(file),
+        [Path(i) for i in ignore],
+        [Path(i) for i in include]
+    ) is result

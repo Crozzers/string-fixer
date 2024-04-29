@@ -7,6 +7,10 @@
 - `include` config option for overriding `ignore`
 - Support for populating the `ignore` config from `.gitignore` files
 
+### Fixed
+
+- Insufficient checks for if a file was ignored/included
+
 ## [0.1.0] - 2024-04-28
 
 ### Added
