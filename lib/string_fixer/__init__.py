@@ -226,10 +226,28 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
         config['output'] = (file.parent / output).resolve()
 
     if config.get('ignore', []):
-        ignore = []
+        ignore = set()
+
+        # populate using config
         for pattern in config['ignore']:
-            ignore.extend(file.parent.glob(pattern))
-        config['ignore'] = ignore
+            ignore.update(file.parent.glob(pattern))
+
+        # populate from local .gitignore
+        if (git_ignore := (file.parent / '.gitignore')).exists():
+            with open(git_ignore) as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        continue
+                    try:
+                        ignore.update(file.parent.glob(line))
+                    except ValueError as e:
+                        raise ValueError(
+                            f'error when parsing glob from gitignore: {line!r}'
+                            f', file: {git_ignore.absolute().relative_to(os.getcwd())}'
+                        ) from e
+
+        config['ignore'] = list(ignore)
 
     if config.get('include', []):
         include = []

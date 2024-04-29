@@ -5,6 +5,7 @@
 ### Added
 
 - `include` config option for overriding `ignore`
+- Support for populating the `ignore` config from `.gitignore` files
 
 ## [0.1.0] - 2024-04-28
 
