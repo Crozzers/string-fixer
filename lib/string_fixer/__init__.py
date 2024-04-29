@@ -15,6 +15,7 @@ class Config(TypedDict):
     dry_run: bool
     output: Optional[Path]
     ignore: Optional[List[Path]]
+    include: Optional[List[Path]]
     extends: Optional[Path]
     target_version: Optional[str]
 
@@ -24,6 +25,7 @@ DEFAULT_CONFIG: Config = {
     'dry_run': False,
     'output': None,
     'ignore': None,
+    'include': None,
     'extends': None,
     'target_version': f'{sys.version_info.major}.{sys.version_info.minor}'
 }
@@ -228,6 +230,12 @@ def load_config_from_file(file: Path) -> Union[Config, None]:
         for pattern in config['ignore']:
             ignore.extend(file.parent.glob(pattern))
         config['ignore'] = ignore
+
+    if config.get('include', []):
+        include = []
+        for pattern in config['include']:
+            include.extend(file.parent.glob(pattern))
+        config['include'] = include
 
     if target_version := config.get('target_version', None):
         if not isinstance(target_version, str):

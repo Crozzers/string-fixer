@@ -73,7 +73,8 @@ if __name__ == '__main__':
             for file in files:
                 file = root / file
                 if file in (config.get('ignore') or []):
-                    continue
+                    if file not in (config.get('include') or []):
+                        continue
                 if not file.suffix == '.py':
                     continue
                 process_file(file, config, base_dir=target)

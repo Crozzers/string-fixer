@@ -40,6 +40,8 @@ dry_run = false
 output = "./"
 # list of glob patterns for files to ignore
 ignore = []
+# list of glob patterns for files to include. This setting overrides `ignore`
+include = []
 # extend and override options in another pyproject.toml file
 extends = ""
 # python version to target for compatibility (defaults to current python version)
