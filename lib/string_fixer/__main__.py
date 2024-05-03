@@ -3,8 +3,9 @@ import os
 import sys
 from pathlib import Path
 
-from . import file_is_ignored, load_config_from_dir, process_file
+from . import file_is_ignored, process_file
 from ._version import __version__
+from .config import load_config_from_dir
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -70,6 +71,8 @@ if __name__ == '__main__':
         for root, _, files in os.walk(target):
             root = Path(root)
             config = load_config_from_dir(root, limit=config_root)
+            if file_is_ignored(root, config['ignore'], config['include']):
+                continue
             for file in files:
                 file = root / file
                 if not file.suffix == '.py':

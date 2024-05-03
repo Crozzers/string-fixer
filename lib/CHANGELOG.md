@@ -6,10 +6,12 @@
 
 - `include` config option for overriding `ignore`
 - Support for populating the `ignore` config from `.gitignore` files
+- Sensible default value for `ignore` config option
 
 ### Fixed
 
 - Insufficient checks for if a file was ignored/included
+- Config files not loading correctly for deep directory trees
 
 ## [0.1.0] - 2024-04-28
 

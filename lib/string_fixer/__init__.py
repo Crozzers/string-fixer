@@ -1,34 +1,13 @@
 import os
 import re
 import sys
-from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, TypedDict, Union
+from typing import Dict, List, Optional
 
 import libcst as cst
-import tomli
 from libcst import FormattedString, parse_module
 
-
-class Config(TypedDict):
-    target: Path
-    dry_run: bool
-    output: Optional[Path]
-    ignore: Optional[List[Path]]
-    include: Optional[List[Path]]
-    extends: Optional[Path]
-    target_version: Optional[str]
-
-
-DEFAULT_CONFIG: Config = {
-    'target': Path('./'),
-    'dry_run': False,
-    'output': None,
-    'ignore': None,
-    'include': None,
-    'extends': None,
-    'target_version': f'{sys.version_info.major}.{sys.version_info.minor}'
-}
+from .config import Config
 
 
 def version_lt(a: str, b: str):
@@ -196,91 +175,6 @@ def replace_quotes(code: str, target_python: Optional[str] = None) -> str:
     transformer = QuoteTransformer(target_python)
     modified_module = module.visit(transformer)
     return modified_module.code
-
-
-def load_config_from_file(file: Path) -> Union[Config, None]:
-    if not file.exists():
-        return
-
-    with open(file, 'rb') as f:
-        toml = tomli.load(f)
-    if 'tool' not in toml or 'string-fixer' not in toml['tool']:
-        return
-
-    config = toml['tool']['string-fixer']
-
-    if extends := config.get('extends', None):
-        extends = (file.parent / extends).resolve()
-        config['extends'] = extends
-        extends = extends.parent if extends.is_file() else extends
-
-        config = {**load_config_from_dir(extends), **config}
-
-    for key, value in DEFAULT_CONFIG.items():
-        config.setdefault(key, value)
-
-    if target := config.get('target'):
-        config['target'] = (file.parent / target).resolve()
-
-    if output := config.get('output'):
-        config['output'] = (file.parent / output).resolve()
-
-    if config.get('ignore', []):
-        ignore = set()
-
-        # populate using config
-        for pattern in config['ignore']:
-            ignore.update(file.parent.glob(pattern))
-
-        # populate from local .gitignore
-        if (git_ignore := (file.parent / '.gitignore')).exists():
-            with open(git_ignore) as f:
-                for line in f.readlines():
-                    line = line.strip()
-                    if line.startswith('#') or not line:
-                        continue
-                    try:
-                        ignore.update(file.parent.glob(line))
-                    except ValueError as e:
-                        raise ValueError(
-                            f'error when parsing glob from gitignore: {line!r}'
-                            f', file: {git_ignore.absolute().relative_to(os.getcwd())}'
-                        ) from e
-
-        config['ignore'] = list(ignore)
-
-    if config.get('include', []):
-        include = []
-        for pattern in config['include']:
-            include.extend(file.parent.glob(pattern))
-        config['include'] = include
-
-    if target_version := config.get('target_version', None):
-        if not isinstance(target_version, str):
-            raise TypeError('target_version must be string')
-
-    return config  # type: ignore
-
-
-@lru_cache
-def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
-    '''
-    Loads closest config file to `path` in directory tree, up to `limit`.
-
-    Args:
-        path: The dir to start from when loading config files
-        limit: Don't go higher than this dir
-
-    Returns:
-        Config from closest config file, or default config if N/A
-    '''
-    path = path.parent if path.is_file() else path
-    file = path / 'pyproject.toml'
-    if config := load_config_from_file(file):
-        return config
-    if limit and path != limit:
-        return load_config_from_dir(path.parent)
-    return DEFAULT_CONFIG
 
 
 def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
