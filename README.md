@@ -38,8 +38,19 @@ target = "./"
 dry_run = false
 # write a copy of the files to this directory, rather than modifying them inplace
 output = "./"
-# list of glob patterns for files to ignore
-ignore = []
+# list of glob patterns for files to ignore. this value is autopopulated from `.gitignore` files as well
+# as a few default values. anything you put in this list will be added to this set, rather than replacing
+# it. Use the `include` option to override
+ignore = [
+    # these are the defaults
+    "./**/.*",
+    "./**/site-packages",
+    "./**/node_modules",
+    "./**/build",
+    "./**/dist",
+    "./**/__pycache__",
+    "./**/venv"
+]
 # list of glob patterns for files to include. This setting overrides `ignore`
 include = []
 # extend and override options in another pyproject.toml file
