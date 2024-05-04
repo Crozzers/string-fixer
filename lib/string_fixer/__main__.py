@@ -36,6 +36,11 @@ if __name__ == '__main__':
         type=str,
         help='Override base directory to load configs from',
     )
+    parser.add_argument(
+        '--target-version',
+        type=str,
+        help='Python version to target for compatibility'
+    )
     parser.add_argument('--version', action='store_true', help='Print version info')
     args = parser.parse_args()
 

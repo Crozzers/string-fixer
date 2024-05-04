@@ -8,6 +8,7 @@
 - Support for populating the `ignore` config from `.gitignore` files
 - Sensible default value for `ignore` config option
 - Support for r-strings, rf-strings and even u-strings
+- CLI option for setting `target_version`
 
 ### Fixed
 
