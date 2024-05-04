@@ -26,10 +26,12 @@ special_cases = {
 
 @pytest.mark.parametrize('case', cases)
 def test_snapshots(snapshot, case: str):
+    target = '3.8'
     if case[:-3] in special_cases:
         special = special_cases[case[:-3]]
         if special['python']:
             specifier = specifiers.Specifier(special['python'])
+            target = special['python'].strip('<=>!')
             current = version.Version(platform.python_version())
             if not specifier.contains(current):
                 pytest.skip(
@@ -45,7 +47,7 @@ def test_snapshots(snapshot, case: str):
         input_code = f.read()
 
     snapshot.assert_match(
-        string_fixer.replace_quotes(input_code),
+        string_fixer.replace_quotes(input_code, target_python=target),
         output_file,
     )
 

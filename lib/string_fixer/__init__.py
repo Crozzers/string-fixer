@@ -52,13 +52,14 @@ class QuoteTransformer(cst.CSTTransformer):
         '''
         quote = quote_override or '\''
         anti = '\'' if quote[0] == '"' else '"'
+        prefix = original_node.prefix
         quote_len = max(len(quote), len(updated_node.quote))
 
         if anti not in original_node.quote:
             return updated_node
 
         # remove start and end quotes
-        text = updated_node.value[len(updated_node.quote) : -len(updated_node.quote)]
+        text = updated_node.value[len(updated_node.quote) + len(prefix) : -len(updated_node.quote)]
 
         text = re.sub(
             r'(\\*)(["\']{%d,})' % quote_len,
@@ -68,11 +69,11 @@ class QuoteTransformer(cst.CSTTransformer):
         )
 
         new_quote = quote[0] * quote_len
-        return updated_node.with_changes(value=f'{new_quote}{text}{new_quote}')
+        return updated_node.with_changes(value=f'{prefix}{new_quote}{text}{new_quote}')
 
     def leave_FormattedString(
         self, original_node: cst.FormattedString, updated_node: cst.FormattedString,
-        depth = 1, meta: Dict[str, int] = {}
+        depth = 1, meta: Optional[Dict[str, int]] = None
     ) -> cst.BaseExpression:
         '''
         Args:
@@ -82,6 +83,7 @@ class QuoteTransformer(cst.CSTTransformer):
             meta: dict used to keep track of info across recursions (eg: max recursion depth)
                 without corrupting the return signature
         '''
+        meta = meta if meta is not None else {}
         meta['max_depth'] = max(meta.get('max_depth', 1), depth)
 
         def get_quote(depth):
@@ -167,7 +169,7 @@ class QuoteTransformer(cst.CSTTransformer):
                 new_parts.append(part)
 
         quote = get_quote(depth)
-        return updated_node.with_changes(parts=new_parts, start=f'f{quote}', end=quote)
+        return updated_node.with_changes(parts=new_parts, start=f'{original_node.prefix}{quote}', end=quote)
 
 
 def replace_quotes(code: str, target_python: Optional[str] = None) -> str:
