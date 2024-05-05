@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.2.0] - 2024-05-05
+
 ### Added
 
 - `include` config option for overriding `ignore`
@@ -27,6 +30,7 @@
 - Initial release
 
 
-[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.1.0...HEAD
+[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.2.0...HEAD
+[0.2.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.1.0...lib/0.2.0
 [0.1.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.0.1...lib/0.1.0
 [0.0.1]: https://github.com/Crozzers/string-fixer/releases/tag/lib/0.0.1
