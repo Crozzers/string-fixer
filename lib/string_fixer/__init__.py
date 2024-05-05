@@ -137,12 +137,14 @@ class QuoteTransformer(cst.CSTTransformer):
                         value = slice.slice.value
                         new_value = value
                         if isinstance(value, cst.SimpleString):
+                            # bump max_depth because simple string is another layer
+                            meta['max_depth'] = max(meta.get('max_depth', 1), depth + 1)
                             new_value = self.leave_SimpleString(
                                 value, value.deep_clone(), get_quote(depth + 1)
                             )
                         elif isinstance(value, FormattedString):
                             new_value = self.leave_FormattedString(
-                                value, value.deep_clone()
+                                value, value.deep_clone(), depth + 1, meta
                             )
 
                         new_slices.append(slice.with_changes(
@@ -156,6 +158,8 @@ class QuoteTransformer(cst.CSTTransformer):
                         )
                     )
                 elif isinstance(expression, cst.SimpleString):
+                    # bump max_depth because simple string is another layer
+                    meta['max_depth'] = max(meta.get('max_depth', 1), depth + 1)
                     new_parts.append(
                         part.with_changes(
                             expression=self.leave_SimpleString(
