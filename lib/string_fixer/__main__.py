@@ -63,6 +63,8 @@ if __name__ == '__main__':
     else:
         config_root = target
 
+    assert target.exists(), 'target must exist'
+
     if target.is_file():
         process_file(
             target,
