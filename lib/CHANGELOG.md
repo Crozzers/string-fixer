@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.3.0] - 2024-06-12
+
 ### Added
 
 - `prefer_least_escapes` config option for preferring quote style deviations over additional escapes
@@ -37,7 +40,8 @@
 - Initial release
 
 
-[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.2.0...HEAD
+[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.3.0...HEAD
+[0.3.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.2.0...lib/0.3.0
 [0.2.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.1.0...lib/0.2.0
 [0.1.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.0.1...lib/0.1.0
 [0.0.1]: https://github.com/Crozzers/string-fixer/releases/tag/lib/0.0.1
