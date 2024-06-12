@@ -24,6 +24,7 @@ classifiers = [
 [project.urls]
 Source = "https://github.com/Crozzers/string-fixer"
 Issues = "https://github.com/Crozzers/string-fixer/issues"
+Changelog = "https://github.com/Crozzers/string-fixer/blob/main/lib/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
