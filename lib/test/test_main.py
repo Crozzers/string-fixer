@@ -21,15 +21,17 @@ cases = [
 
 special_cases = {
     'f_strings_py312': {'python': '>=3.12'},
-    'f_strings_py311': {'python': '<=3.11'}
+    'f_strings_py311': {'python': '<=3.11'},
+    'least_escapes': {'prefer_least_escapes': True}
 }
 
 @pytest.mark.parametrize('case', cases)
 def test_snapshots(snapshot, case: str):
     target = '3.8'
+    options = {}
     if case[:-3] in special_cases:
         special = special_cases[case[:-3]]
-        if special['python']:
+        if 'python' in special:
             specifier = specifiers.Specifier(special['python'])
             target = special['python'].strip('<=>!')
             current = version.Version(platform.python_version())
@@ -38,6 +40,8 @@ def test_snapshots(snapshot, case: str):
                     f'skipped {case} due to python version'
                     f' (requires {specifier}, has {current})'
                 )
+        if 'prefer_least_escapes' in special:
+            options['prefer_least_escapes'] = special['prefer_least_escapes']
 
     snapshot.snapshot_dir = str(SNAPSHOT_DIR)
     input_file = str(CASES_DIR / case)
@@ -47,7 +51,7 @@ def test_snapshots(snapshot, case: str):
         input_code = f.read()
 
     snapshot.assert_match(
-        string_fixer.replace_quotes(input_code, target_python=target),
+        string_fixer.replace_quotes(input_code, target_python=target, **options),
         output_file,
     )
 

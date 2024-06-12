@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- `prefer_least_escapes` config option for preferring quote style deviations over additional escapes
+
+### Fixed
+
+- r-string contents being modified due to overzealous quote escaping
 
 ## [0.2.0] - 2024-05-05
 

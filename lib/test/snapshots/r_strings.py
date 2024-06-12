@@ -2,7 +2,7 @@ r'abcdef'
 
 r'abc\"def\"'
 
-r'abc\'def\'ghi'
+r"abc'def'ghi"
 
 rf'abc{"def"}ghi'
 

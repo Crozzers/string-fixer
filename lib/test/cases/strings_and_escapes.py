@@ -12,3 +12,5 @@
 '''Unescaped \\"quotation\\" in string'''
 
 """'''Nested triple quote'''"""
+
+"String containing 'one string' and \"another style\" of string and \'a third\'"

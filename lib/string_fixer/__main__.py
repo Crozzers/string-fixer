@@ -22,7 +22,7 @@ if __name__ == '__main__':
         '-d',
         '--dry-run',
         action='store_true',
-        help='Show planned changes but don\'t modify any files',
+        help="Show planned changes but don't modify any files",
     )
     parser.add_argument(
         '-o',
@@ -37,9 +37,13 @@ if __name__ == '__main__':
         help='Override base directory to load configs from',
     )
     parser.add_argument(
-        '--target-version',
-        type=str,
-        help='Python version to target for compatibility'
+        '--target-version', type=str, help='Python version to target for compatibility'
+    )
+    parser.add_argument(
+        '--prefer-least-escapes',
+        action=argparse.BooleanOptionalAction,
+        help='Try to produce strings with the least number of escapes, even if that means deviating from the quote style',
+        default=False,
     )
     parser.add_argument('--version', action='store_true', help='Print version info')
     args = parser.parse_args()

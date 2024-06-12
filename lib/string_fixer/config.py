@@ -16,6 +16,7 @@ class Config(TypedDict):
     include: Optional[List[Path]]
     extends: Optional[Path]
     target_version: Optional[str]
+    prefer_least_escapes: bool
 
 
 class UnparsedConfig(Config, TypedDict):
@@ -38,7 +39,8 @@ DEFAULT_CONFIG: UnparsedConfig = {
     ],
     'include': None,
     'extends': None,
-    'target_version': f'{sys.version_info.major}.{sys.version_info.minor}'
+    'target_version': f'{sys.version_info.major}.{sys.version_info.minor}',
+    'prefer_least_escapes': False
 }
 
 

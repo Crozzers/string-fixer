@@ -29,7 +29,7 @@ This project has an accompanying [VSCode extension](https://github.com/Crozzers/
 
 ## Configuration
 
-Configuration is done via the `pyproject.toml` file:
+Configuration is done via the `pyproject.toml` file and the default settings are as follows:
 ```toml
 [tool.string-fixer]
 # file or folder to format
@@ -58,6 +58,9 @@ extends = ""
 # python version to target for compatibility (defaults to current python version)
 # this must be a string because `float("3.10") == 3.1`
 target_version = "3.12"
+# try to produce strings with the least number of escapes, even if that means deviating from the quote style
+# this is false by default to match previous behaviour, but will be true by default from `0.4.0` onwards
+prefer_least_escapes = false
 ```
 
 All file paths are resolved relative to the `pyproject.toml`'s location.
