@@ -42,7 +42,7 @@ jobs:
 
       - name: Edit changelog
         working-directory: extensions/vscode/
-        run: ../.github/scripts/edit-changelog.sh "$VERSION" "$TAG_PREFIX"
+        run: ../../.github/scripts/edit-changelog.sh "$VERSION" "$TAG_PREFIX"
         env:
           VERSION: ${{ inputs.version }}
 
