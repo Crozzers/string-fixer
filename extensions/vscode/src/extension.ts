@@ -2,24 +2,49 @@ import * as vscode from 'vscode';
 import * as childProcess from 'child_process';
 import { PythonExtension } from '@vscode/python-extension';
 import { promisify } from 'util';
-import { join } from 'path';
+import * as path from 'path';
 
 const execFile = promisify(childProcess.execFile);
 
+function isParent(parent: string, child: string) {
+  // https://stackoverflow.com/a/45242825
+  const relative = path.relative(parent, child);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
 function getExecFolder(): string {
-  const config = vscode.workspace.getConfiguration('string-fixer');
-
-  if (!vscode.workspace.workspaceFolders) {
-    throw new Error('no workspace open');
+  // get parent folder of current open doc
+  let activeFolder: string | null = null;
+  if (vscode.window.activeTextEditor) {
+    activeFolder = path.join(
+      vscode.window.activeTextEditor.document.uri.path,
+      '..',
+    );
   }
-  const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+  // get all active workspaces and filter by which ones contain the currently active file (if applicable)
+  let workspaces: vscode.WorkspaceFolder[] = [];
+  if (vscode.workspace.workspaceFolders) {
+    workspaces = vscode.workspace.workspaceFolders.slice();
+    if (activeFolder) {
+      workspaces = workspaces.filter((f) => isParent(f.uri.path, activeFolder));
+    }
+  }
 
+  if (workspaces.length === 0) {
+    if (activeFolder) {
+      return activeFolder;
+    }
+    throw new Error('no workspace or open files detected');
+  }
+
+  const workspace = workspaces[0];
+  const config = vscode.workspace.getConfiguration('string-fixer', workspace);
   const folder: string | undefined = config.get('folder');
   // do this rather than `config.has` because typescript compiler
   if (folder) {
-    return join(workspaceFolder, folder);
+    return path.join(workspace.uri.fsPath, folder);
   }
-  return workspaceFolder;
+  return workspace.uri.fsPath;
 }
 
 async function getPythonExe(): Promise<string> {

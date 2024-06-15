@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- Ability to format standalone files without opening them as part of a workspace
+
+### Changed
+
+- Better exec path selection when multiple workspaces open at once
+
 ### Fixed
 
 - Failing to find exec folder for files in subfolders
