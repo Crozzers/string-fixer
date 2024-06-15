@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Failing to find exec folder for files in subfolders
 
 ## [0.0.2] - 2024-04-24
 

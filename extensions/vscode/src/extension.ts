@@ -19,7 +19,7 @@ function getExecFolder(): string {
   if (folder) {
     return join(workspaceFolder, folder);
   }
-  throw new Error('cannot find suitable execution folder');
+  return workspaceFolder;
 }
 
 async function getPythonExe(): Promise<string> {
