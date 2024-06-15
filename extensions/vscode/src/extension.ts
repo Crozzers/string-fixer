@@ -6,6 +6,43 @@ import * as path from 'path';
 
 const execFile = promisify(childProcess.execFile);
 
+/** Get the folder containing the text file currently being edited */
+function getActiveFolder() {
+  let activeFolder: string | undefined;
+  if (vscode.window.activeTextEditor) {
+    activeFolder = path.join(
+      vscode.window.activeTextEditor.document.uri.path,
+      '..',
+    );
+  }
+  return activeFolder;
+}
+
+/**
+ * Get the workspace relevant to a specific folder
+ * @param folder the folder inside a workspace. Defaults to {@link getActiveFolder}()
+ */
+function getActiveWorkspaces(folder?: string) {
+  const activeFolder = folder || getActiveFolder();
+
+  let workspaces: vscode.WorkspaceFolder[] = [];
+  if (vscode.workspace.workspaceFolders) {
+    workspaces = vscode.workspace.workspaceFolders.slice();
+    if (activeFolder) {
+      workspaces = workspaces.filter((f) => isParent(f.uri.path, activeFolder));
+    }
+  }
+  return workspaces;
+}
+
+/** Get the configuration relevant to the currently active workspace */
+function getConfig() {
+  return vscode.workspace.getConfiguration(
+    'string-fixer',
+    getActiveWorkspaces()[0],
+  );
+}
+
 function isParent(parent: string, child: string) {
   // https://stackoverflow.com/a/45242825
   const relative = path.relative(parent, child);
@@ -14,21 +51,9 @@ function isParent(parent: string, child: string) {
 
 function getExecFolder(): string {
   // get parent folder of current open doc
-  let activeFolder: string | null = null;
-  if (vscode.window.activeTextEditor) {
-    activeFolder = path.join(
-      vscode.window.activeTextEditor.document.uri.path,
-      '..',
-    );
-  }
+  const activeFolder = getActiveFolder();
   // get all active workspaces and filter by which ones contain the currently active file (if applicable)
-  let workspaces: vscode.WorkspaceFolder[] = [];
-  if (vscode.workspace.workspaceFolders) {
-    workspaces = vscode.workspace.workspaceFolders.slice();
-    if (activeFolder) {
-      workspaces = workspaces.filter((f) => isParent(f.uri.path, activeFolder));
-    }
-  }
+  const workspaces = getActiveWorkspaces(activeFolder);
 
   if (workspaces.length === 0) {
     if (activeFolder) {
@@ -38,7 +63,7 @@ function getExecFolder(): string {
   }
 
   const workspace = workspaces[0];
-  const config = vscode.workspace.getConfiguration('string-fixer', workspace);
+  const config = getConfig();
   const folder: string | undefined = config.get('folder');
   // do this rather than `config.has` because typescript compiler
   if (folder) {
@@ -86,7 +111,7 @@ enum FormatterOpts {
 }
 
 async function runPreFormatter() {
-  const config = vscode.workspace.getConfiguration('string-fixer');
+  const config = getConfig();
   const preFormatter: FormatterOpts | undefined = config.get('preFormatter');
   logger?.info(`pre-formatter: ${preFormatter}`);
   if (preFormatter === FormatterOpts.RUFF) {
@@ -125,6 +150,7 @@ async function runPreFormatter() {
       );
       await vscode.commands.executeCommand('editor.action.formatDocument');
       // put default formatter back
+      logger?.info(`change python formatter back to ${defaultFormatter}`);
       await config.update(
         'defaultFormatter',
         defaultFormatter,

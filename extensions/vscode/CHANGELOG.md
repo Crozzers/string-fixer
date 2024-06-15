@@ -9,6 +9,7 @@
 ### Changed
 
 - Better exec path selection when multiple workspaces open at once
+- Better config loading when multiple workspaces open at once
 
 ### Fixed
 
