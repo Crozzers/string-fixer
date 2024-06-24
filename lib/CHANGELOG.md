@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 
+### Added
+
+- `--dry-run` CLI arg now has an inverse argument: `--no-dry-run`
+
+
 ## [0.3.0] - 2024-06-12
 
 ### Added

@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-d',
         '--dry-run',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
         help="Show planned changes but don't modify any files",
     )
     parser.add_argument(
