@@ -1,3 +1,5 @@
+import argparse
+import glob as _glob
 import os
 import sys
 from copy import deepcopy
@@ -6,6 +8,13 @@ from pathlib import Path
 from typing import List, Optional, TypedDict, Union, cast
 
 import tomli
+
+
+def glob(pattern: str, root_dir: Path):
+    return (
+        root_dir / Path(i)
+        for i in _glob.glob(pattern, root_dir=root_dir, recursive=True)
+    )
 
 
 class Config(TypedDict):
@@ -35,12 +44,12 @@ DEFAULT_CONFIG: UnparsedConfig = {
         './**/build',
         './**/dist',
         './**/__pycache__',
-        './**/venv'
+        './**/venv',
     ],
     'include': None,
     'extends': None,
     'target_version': f'{sys.version_info.major}.{sys.version_info.minor}',
-    'prefer_least_escapes': False
+    'prefer_least_escapes': False,
 }
 
 
@@ -71,7 +80,8 @@ def parse_config(config: UnparsedConfig, file: Path) -> Config:
             if isinstance(pattern, Path):
                 ignore.add(pattern)
             else:
-                ignore.update(file.parent.glob(pattern))
+                # use glob module rather than pathlib glob because syntax is much more lenient
+                ignore.update(glob(pattern, file.parent))
 
         # populate from local .gitignore
         if (git_ignore := (file.parent / '.gitignore')).exists():
@@ -81,14 +91,16 @@ def parse_config(config: UnparsedConfig, file: Path) -> Config:
                     if line.startswith('#') or not line:
                         continue
                     try:
-                        ignore.update(file.parent.glob(line))
+                        ignore.update(glob(line, file.parent))
                     except ValueError as e:
                         raise ValueError(
                             f'error when parsing glob from gitignore: {line!r}'
                             f', file: {git_ignore.absolute().relative_to(os.getcwd())}'
                         ) from e
 
-        config['ignore'] = list({i for i in ignore if all(p not in ignore for p in i.parents)})
+        config['ignore'] = list(
+            {i for i in ignore if all(p not in ignore for p in i.parents)}
+        )
 
     if 'include' in config and config['include']:
         include = []
@@ -96,7 +108,7 @@ def parse_config(config: UnparsedConfig, file: Path) -> Config:
             if isinstance(pattern, Path):
                 include.append(pattern)
             else:
-                include.extend(file.parent.glob(pattern))
+                include.extend(glob(pattern, file.parent))
         config['include'] = include
 
     if target_version := config.get('target_version', None):

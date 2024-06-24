@@ -7,6 +7,10 @@
 
 - `--dry-run` CLI arg now has an inverse argument: `--no-dry-run`
 
+### Fixed
+
+- Errors being thrown for non-strict glob syntaxes
+
 
 ## [0.3.0] - 2024-06-12
 
