@@ -151,3 +151,22 @@ def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
     if limit and path != limit:
         return load_config_from_dir(path.parent, limit)
     return parse_config(DEFAULT_CONFIG, file)
+
+
+def merge_with_cli_args(config: Config, args: argparse.Namespace) -> Config:
+    # parse args relative to cwd so that any paths get fully expanded
+    cli_config = parse_config(
+        cast(UnparsedConfig, vars(args)), Path.cwd() / 'pyproject.toml'
+    )
+    for key, value in cli_config.items():
+        if key not in DEFAULT_CONFIG:
+            continue
+
+        if key == 'include' or key == 'ignore':
+            if not config[key]:
+                config[key] = []
+            config[key].append(value)  # type: ignore
+        elif value:
+            config[key] = value
+
+    return config

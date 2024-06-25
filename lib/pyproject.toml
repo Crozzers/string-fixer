@@ -40,7 +40,7 @@ dist = [
     "wheel",
     "twine"
 ]
-all = ["string_fixer[dev,test]"]
+all = ["string_fixer[dev,test,dist]"]
 
 [build-system]
 requires = ["setuptools"]

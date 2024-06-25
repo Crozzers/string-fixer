@@ -7,6 +7,10 @@
 
 - `--dry-run` CLI arg now has an inverse argument: `--no-dry-run`
 
+### Changed
+
+- CLI args will now override any `pyproject.toml` settings
+
 ### Fixed
 
 - Errors being thrown for non-strict glob syntaxes
