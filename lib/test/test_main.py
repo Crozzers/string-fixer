@@ -22,8 +22,8 @@ cases = [
 special_cases = {
     'f_strings_py312': {'python': '>=3.12'},
     'f_strings_py311': {'python': '<=3.11'},
-    'least_escapes': {'prefer_least_escapes': True},
-    'double_quote_style': {'quote_style': 'double'}
+    'double_quote_style': {'quote_style': 'double'},
+    'least_escapes_false': {'prefer_least_escapes': False}
 }
 
 @pytest.mark.parametrize('case', cases)

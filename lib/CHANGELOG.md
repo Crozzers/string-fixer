@@ -11,6 +11,7 @@
 ### Changed
 
 - CLI args will now override any `pyproject.toml` settings
+- `prefer_least_escapes` now defaults to `True`
 
 ### Fixed
 

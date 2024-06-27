@@ -50,7 +50,7 @@ DEFAULT_CONFIG: UnparsedConfig = {
     'include': None,
     'extends': None,
     'target_version': f'{sys.version_info.major}.{sys.version_info.minor}',
-    'prefer_least_escapes': False,
+    'prefer_least_escapes': True,
     'quote_style': 'single'
 }
 

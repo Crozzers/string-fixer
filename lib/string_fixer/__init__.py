@@ -21,7 +21,7 @@ def version_lt(a: str, b: str):
 
 
 class QuoteTransformer(cst.CSTTransformer):
-    def __init__(self, target_python: Optional[str] = None, prefer_least_escapes = False, quote_style: Literal['single', 'double'] = 'single'):
+    def __init__(self, target_python: Optional[str] = None, prefer_least_escapes = True, quote_style: Literal['single', 'double'] = 'single'):
         '''
         Args:
             target_python: which version of python to target. Defaults to current version
