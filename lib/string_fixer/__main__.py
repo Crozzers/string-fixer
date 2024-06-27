@@ -53,6 +53,12 @@ if __name__ == '__main__':
         default=argparse.SUPPRESS,
     )
     parser.add_argument(
+        '--quote-style',
+        help='Change the preferred quote style between single (default) and double quotes',
+        choices=['single', 'double'],
+        default=argparse.SUPPRESS
+    )
+    parser.add_argument(
         '--version',
         action='store_true',
         help='Print version info',

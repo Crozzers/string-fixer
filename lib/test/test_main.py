@@ -22,7 +22,8 @@ cases = [
 special_cases = {
     'f_strings_py312': {'python': '>=3.12'},
     'f_strings_py311': {'python': '<=3.11'},
-    'least_escapes': {'prefer_least_escapes': True}
+    'least_escapes': {'prefer_least_escapes': True},
+    'double_quote_style': {'quote_style': 'double'}
 }
 
 @pytest.mark.parametrize('case', cases)
@@ -42,6 +43,8 @@ def test_snapshots(snapshot, case: str):
                 )
         if 'prefer_least_escapes' in special:
             options['prefer_least_escapes'] = special['prefer_least_escapes']
+        if 'quote_style' in special:
+            options['quote_style'] = special['quote_style']
 
     snapshot.snapshot_dir = str(SNAPSHOT_DIR)
     input_file = str(CASES_DIR / case)

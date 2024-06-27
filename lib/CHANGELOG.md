@@ -6,6 +6,7 @@
 ### Added
 
 - `--dry-run` CLI arg now has an inverse argument: `--no-dry-run`
+- Ability to override preferred quote character via `quote_style` setting
 
 ### Changed
 

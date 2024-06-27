@@ -61,6 +61,8 @@ target_version = "3.12"
 # try to produce strings with the least number of escapes, even if that means deviating from the quote style
 # this is false by default to match previous behaviour, but will be true by default from `0.4.0` onwards
 prefer_least_escapes = false
+# preferred quote style. Allowed options are 'single' or "double"
+quote_style = "single"
 ```
 
 All file paths are resolved relative to the `pyproject.toml`'s location.

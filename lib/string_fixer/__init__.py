@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 import libcst as cst
 from libcst import FormattedString, parse_module
@@ -21,13 +21,14 @@ def version_lt(a: str, b: str):
 
 
 class QuoteTransformer(cst.CSTTransformer):
-    def __init__(self, target_python: Optional[str] = None, prefer_least_escapes = False):
+    def __init__(self, target_python: Optional[str] = None, prefer_least_escapes = False, quote_style: Literal['single', 'double'] = 'single'):
         '''
         Args:
             target_python: which version of python to target. Defaults to current version
         '''
         self._target_python = target_python or f'{sys.version_info.major}.{sys.version_info.minor}'
         self.prefer_least_escapes = prefer_least_escapes
+        self.quote_style = quote_style
 
     def _escape_quote_sub(self, match: re.Match) -> str:
         '''
@@ -69,6 +70,9 @@ class QuoteTransformer(cst.CSTTransformer):
     def _count_escapes(self, text: str):
         return len([i for i in re.findall(r'(\\*)["\']', text) if len(i) % 2 != 0])
 
+    def _get_quote(self):
+        return ("'", '"') if self.quote_style == 'single' else ('"', "'")
+
     def leave_SimpleString(
         self, original_node: cst.SimpleString, updated_node: cst.SimpleString,
         quote_override: Optional[str] = None
@@ -80,7 +84,7 @@ class QuoteTransformer(cst.CSTTransformer):
             quote_override: override what kind of quote we are assigning to the string. Useful for
                 nested f-strings where quote re-use is not allowed
         '''
-        quote = quote_override or '\''
+        quote = quote_override or self._get_quote()[0]
         anti = '\'' if quote[0] == '"' else '"'
         prefix = original_node.prefix
         quote_len = max(len(quote), len(updated_node.quote))
@@ -132,14 +136,15 @@ class QuoteTransformer(cst.CSTTransformer):
 
         def get_quote(depth):
             '''Get appropriate quote given the f-string nest depth'''
+            quote, anti = self._get_quote()
             if meta['max_depth'] <= 2:
-                quote_order = ['\'', '"']
+                quote_order = [quote, anti]
             elif meta['max_depth'] == 3:
-                quote_order = ["'''", "'", '"']
+                quote_order = [quote * 3, quote, anti]
             else:
-                quote_order = ["'''", '"""', "'", '"']
+                quote_order = [quote * 3, anti * 3, quote, anti]
 
-            return quote_order[depth - 1] if version_lt(self._target_python, '3.12') else '\''
+            return quote_order[depth - 1] if version_lt(self._target_python, '3.12') else quote
 
         if version_lt(self._target_python, '3.12') and depth > 4:
             # quit after 4 levels on <=3.11 because you can't reuse quotes in f-string expressions.
@@ -220,9 +225,9 @@ class QuoteTransformer(cst.CSTTransformer):
         return updated_node.with_changes(parts=new_parts, start=f'{original_node.prefix}{quote}', end=quote)
 
 
-def replace_quotes(code: str, target_python: Optional[str] = None, **kwargs) -> str:
+def replace_quotes(code: str, **kwargs) -> str:
     module = parse_module(code)
-    transformer = QuoteTransformer(target_python, **kwargs)
+    transformer = QuoteTransformer(**kwargs)
     modified_module = module.visit(transformer)
     return modified_module.code
 
@@ -235,7 +240,7 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
     with open(file) as f:
         code = f.read()
 
-    modified = replace_quotes(code, config['target_version'], prefer_least_escapes=config['prefer_least_escapes'])
+    modified = replace_quotes(code, target_python=config['target_version'], prefer_least_escapes=config['prefer_least_escapes'], quote_style=config['quote_style'])
 
     if config.get('dry_run', False):
         print('---')

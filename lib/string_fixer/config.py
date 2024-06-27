@@ -5,7 +5,7 @@ import sys
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, TypedDict, Union, cast
+from typing import List, Literal, Optional, TypedDict, Union, cast
 
 import tomli
 
@@ -26,6 +26,7 @@ class Config(TypedDict):
     extends: Optional[Path]
     target_version: Optional[str]
     prefer_least_escapes: bool
+    quote_style: Optional[Literal['single', 'double']]
 
 
 class UnparsedConfig(Config, TypedDict):
@@ -50,6 +51,7 @@ DEFAULT_CONFIG: UnparsedConfig = {
     'extends': None,
     'target_version': f'{sys.version_info.major}.{sys.version_info.minor}',
     'prefer_least_escapes': False,
+    'quote_style': 'single'
 }
 
 
