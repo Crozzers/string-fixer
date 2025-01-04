@@ -1,0 +1,8 @@
+[package]
+name = "string_fixer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libcst = "1.5.1"
+typed-arena = "2.0.2"
