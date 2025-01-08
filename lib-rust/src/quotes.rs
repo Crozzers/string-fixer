@@ -1,6 +1,7 @@
 use libcst_native::AssignTargetExpression;
 use libcst_native::Codegen;
 use libcst_native::CodegenState;
+use libcst_native::DelTargetExpression;
 use libcst_native::Expression;
 use libcst_native::List;
 use libcst_native::SimpleString;
@@ -56,23 +57,100 @@ fn process_small_statement<'a>(statement: &mut SmallStatement<'a>, arena: &'a Ar
             process_expression(&mut stmt.value, arena);
         }
         SmallStatement::AnnAssign(stmt) => {
-            match &mut stmt.target {
-                AssignTargetExpression::Attribute(target) => {
-                    process_expression(&mut(*target.value), arena);
+            process_assign_target_expression(&mut stmt.target, arena);
+        }
+        SmallStatement::Raise(stmt) => {
+            if let Some(ref mut expr) = stmt.exc {
+                process_expression(expr, arena);
+            }
+            if let Some(ref mut cause) = stmt.cause {
+                process_expression(&mut cause.item, arena);
+            }
+        }
+        SmallStatement::AugAssign(stmt) => {
+            process_assign_target_expression(&mut stmt.target, arena);
+            process_expression(&mut stmt.value, arena);
+        }
+        SmallStatement::Del(stmt) => {
+            process_del_target_expression(&mut stmt.target, arena)
+        }
+        SmallStatement::TypeAlias(stmt) => {
+            process_expression(&mut stmt.value, arena);
+            if let Some(ref mut type_parameters) = stmt.type_parameters {
+                for param in type_parameters.params.iter_mut() {
+                    // TODO: cannot process TypeParam::param because that enum isn't publicly exposed
+
+                    if let Some(ref mut default) = param.default {
+                        process_expression(default, arena);
+                    }
                 }
-                AssignTargetExpression::StarredElement(target) => {
-                    process_expression(&mut(*target.value), arena);
-                }
-                AssignTargetExpression::Tuple(target) => {
-                    process_tuple(&mut **target, arena);
-                }
-                AssignTargetExpression::List(target) => {
-                    process_tuple(&mut **target, arena);
-                }
-                _ => {}
             }
         }
         _ => {}
+    }
+}
+
+
+fn process_del_target_expression<'a>(target: &mut cst::DelTargetExpression<'a>, arena: &'a Arena<String>) {
+    match target {
+        DelTargetExpression::Attribute(target) => {
+            process_expression(&mut(*target.value), arena);
+        }
+        DelTargetExpression::Tuple(target) => {
+            process_tuple(&mut **target, arena);
+        }
+        DelTargetExpression::List(target) => {
+            process_tuple(&mut **target, arena);
+        }
+        DelTargetExpression::Subscript(target) => {
+            process_subscript(target, arena);
+        }
+        _ => {}
+    }
+}
+
+
+fn process_assign_target_expression<'a>(target: &mut cst::AssignTargetExpression<'a>, arena: &'a Arena<String>) {
+    match target {
+        AssignTargetExpression::Attribute(target) => {
+            process_expression(&mut(*target.value), arena);
+        }
+        AssignTargetExpression::StarredElement(target) => {
+            process_expression(&mut(*target.value), arena);
+        }
+        AssignTargetExpression::Tuple(target) => {
+            process_tuple(&mut **target, arena);
+        }
+        AssignTargetExpression::List(target) => {
+            process_tuple(&mut **target, arena);
+        }
+        AssignTargetExpression::Subscript(target) => {
+            process_subscript(target, arena);
+        }
+        _ => {}
+    }
+}
+
+
+fn process_subscript<'a>(target: &mut cst::Subscript<'a>, arena: &'a Arena<String>) {
+    process_expression(&mut target.value, arena);
+    for elem in target.slice.iter_mut() {
+        match &mut elem.slice {
+            cst::BaseSlice::Index(slice) => {
+                process_expression(&mut slice.value, arena);
+            }
+            cst::BaseSlice::Slice(slice) => {
+                if let Some(ref mut lower) = &mut slice.lower {
+                    process_expression(lower, arena);
+                }
+                if let Some(ref mut upper) = &mut slice.upper {
+                    process_expression(upper, arena);
+                }
+                if let Some(ref mut step) = &mut slice.step {
+                    process_expression(step, arena);
+                }
+            }
+        }
     }
 }
 
@@ -127,3 +205,4 @@ fn process_simple_string<'a>(string: &mut SimpleString<'a>, arena: &'a Arena<Str
 
     println!("SS replaced: {}", string.value)
 }
+
