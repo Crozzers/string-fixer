@@ -78,7 +78,14 @@ fn process_small_statement<'a>(statement: &mut SmallStatement<'a>, arena: &'a Ar
             process_expression(&mut stmt.value, arena);
             if let Some(ref mut type_parameters) = stmt.type_parameters {
                 for param in type_parameters.params.iter_mut() {
-                    // TODO: cannot process TypeParam::param because that enum isn't publicly exposed
+                    match param.param {
+                        cst::TypeVarLike::TypeVar(ref mut tv) => {
+                            if let Some(ref mut bound) = &mut tv.bound {
+                                process_expression(bound, arena);
+                            }
+                        }
+                        _ => {}
+                    }
 
                     if let Some(ref mut default) = param.default {
                         process_expression(default, arena);
