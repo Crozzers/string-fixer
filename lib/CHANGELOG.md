@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix target parent folder check when config root is `./`
 
 ## [0.4.1] - 2025-01-19
 

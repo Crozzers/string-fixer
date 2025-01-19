@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     target = Path(config['target'])
     if 'config_root' in args and args.config_root:
-        config_root = Path(args.config_root)
+        config_root = Path(args.config_root).absolute()
         assert config_root.exists(), 'config root must exist'
         assert (
             config_root in target.parents
