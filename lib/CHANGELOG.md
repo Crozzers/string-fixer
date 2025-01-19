@@ -6,6 +6,7 @@
 
 - Fix target parent folder check when config root is `./`
 - Fix default argument values overriding local config values
+- Fix multiline triple strings being replaced with single quotes
 
 ## [0.4.1] - 2025-01-19
 

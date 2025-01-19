@@ -2,10 +2,11 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 import libcst as cst
 from libcst import FormattedString, parse_module
+from libcst.metadata import PositionProvider, MetadataWrapper
 
 from .config import Config
 
@@ -21,12 +22,21 @@ def version_lt(a: str, b: str):
 
 
 class QuoteTransformer(cst.CSTTransformer):
-    def __init__(self, target_python: Optional[str] = None, prefer_least_escapes = True, quote_style: Literal['single', 'double'] = 'single'):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
+    def __init__(
+        self,
+        target_python: Optional[str] = None,
+        prefer_least_escapes=True,
+        quote_style: Literal['single', 'double'] = 'single',
+    ):
         '''
         Args:
             target_python: which version of python to target. Defaults to current version
         '''
-        self._target_python = target_python or f'{sys.version_info.major}.{sys.version_info.minor}'
+        self._target_python = (
+            target_python or f'{sys.version_info.major}.{sys.version_info.minor}'
+        )
         self.prefer_least_escapes = prefer_least_escapes
         self.quote_style = quote_style
 
@@ -74,8 +84,10 @@ class QuoteTransformer(cst.CSTTransformer):
         return ("'", '"') if self.quote_style == 'single' else ('"', "'")
 
     def leave_SimpleString(
-        self, original_node: cst.SimpleString, updated_node: cst.SimpleString,
-        quote_override: Optional[str] = None
+        self,
+        original_node: cst.SimpleString,
+        updated_node: cst.SimpleString,
+        quote_override: Optional[str] = None,
     ) -> cst.SimpleString:
         '''
         Args:
@@ -85,7 +97,7 @@ class QuoteTransformer(cst.CSTTransformer):
                 nested f-strings where quote re-use is not allowed
         '''
         quote = quote_override or self._get_quote()[0]
-        anti = '\'' if quote[0] == '"' else '"'
+        anti = "'" if quote[0] == '"' else '"'
         prefix = original_node.prefix
         quote_len = max(len(quote), len(updated_node.quote))
 
@@ -93,10 +105,12 @@ class QuoteTransformer(cst.CSTTransformer):
             return updated_node
 
         # remove start and end quotes
-        text = updated_node.value[len(updated_node.quote) + len(prefix) : -len(updated_node.quote)]
+        text = updated_node.value[
+            len(updated_node.quote) + len(prefix) : -len(updated_node.quote)
+        ]
         new_quote = quote[0] * quote_len
 
-        if 'r' in prefix :
+        if 'r' in prefix:
             if quote in text:
                 # we can't add/remove escapes from rstrings
                 return original_node
@@ -120,8 +134,11 @@ class QuoteTransformer(cst.CSTTransformer):
         return updated_node.with_changes(value=f'{prefix}{new_quote}{text}{new_quote}')
 
     def leave_FormattedString(
-        self, original_node: cst.FormattedString, updated_node: cst.FormattedString,
-        depth = 1, meta: Optional[Dict[str, int]] = None
+        self,
+        original_node: cst.FormattedString,
+        updated_node: cst.FormattedString,
+        depth=1,
+        meta: Optional[dict] = None,
     ) -> cst.BaseExpression:
         '''
         Args:
@@ -133,18 +150,37 @@ class QuoteTransformer(cst.CSTTransformer):
         '''
         meta = meta if meta is not None else {}
         meta['max_depth'] = max(meta.get('max_depth', 1), depth)
+        meta['multiline_depths'] = meta.get('multiline_depths', [])
+
+        metadata = self.get_metadata(PositionProvider, original_node)
+        if len(original_node.quote) == 3 and metadata.start.line < metadata.end.line:
+            meta['multiline_depths'].append(depth)
 
         def get_quote(depth):
             '''Get appropriate quote given the f-string nest depth'''
             quote, anti = self._get_quote()
-            if meta['max_depth'] <= 2:
-                quote_order = [quote, anti]
-            elif meta['max_depth'] == 3:
-                quote_order = [quote * 3, quote, anti]
-            else:
-                quote_order = [quote * 3, anti * 3, quote, anti]
 
-            return quote_order[depth - 1] if version_lt(self._target_python, '3.12') else quote
+            if not version_lt(self._target_python, '3.12'):
+                return quote * 3 if depth in meta['multiline_depths'] else quote
+
+            if meta['multiline_depths']:
+                multiline_order = [quote * 3, anti * 3]
+                single_order = [quote, anti]
+                quote_order = []
+                for i in range(0, meta['max_depth']):
+                    if i + 1 in meta['multiline_depths']:
+                        quote_order.append(multiline_order.pop(0))
+                    else:
+                        quote_order.append(single_order.pop(0))
+            else:
+                if meta['max_depth'] <= 2:
+                    quote_order = [quote, anti]
+                elif meta['max_depth'] == 3:
+                    quote_order = [quote * 3, quote, anti]
+                else:
+                    quote_order = [quote * 3, anti * 3, quote, anti]
+
+            return quote_order[depth - 1]
 
         if version_lt(self._target_python, '3.12') and depth > 4:
             # quit after 4 levels on <=3.11 because you can't reuse quotes in f-string expressions.
@@ -196,11 +232,11 @@ class QuoteTransformer(cst.CSTTransformer):
                                 value, value.deep_clone(), depth + 1, meta
                             )
 
-                        new_slices.append(slice.with_changes(
-                            slice=slice.slice.with_changes(
-                                value=new_value
+                        new_slices.append(
+                            slice.with_changes(
+                                slice=slice.slice.with_changes(value=new_value)
                             )
-                        ))
+                        )
                     new_parts.append(
                         part.with_changes(
                             expression=expression.with_changes(slice=new_slices)
@@ -209,10 +245,14 @@ class QuoteTransformer(cst.CSTTransformer):
                 elif isinstance(expression, cst.SimpleString):
                     # bump max_depth because simple string is another layer
                     meta['max_depth'] = max(meta.get('max_depth', 1), depth + 1)
+                    if len(expression.quote) == 3:
+                        meta['multiline_depths'].append(depth + 1)
                     new_parts.append(
                         part.with_changes(
                             expression=self.leave_SimpleString(
-                                expression, expression.deep_clone(), get_quote(depth + 1)
+                                expression,
+                                expression.deep_clone(),
+                                get_quote(depth + 1),
                             )
                         )
                     )
@@ -222,11 +262,13 @@ class QuoteTransformer(cst.CSTTransformer):
                 new_parts.append(part)
 
         quote = get_quote(depth)
-        return updated_node.with_changes(parts=new_parts, start=f'{original_node.prefix}{quote}', end=quote)
+        return updated_node.with_changes(
+            parts=new_parts, start=f'{original_node.prefix}{quote}', end=quote
+        )
 
 
 def replace_quotes(code: str, **kwargs) -> str:
-    module = parse_module(code)
+    module = MetadataWrapper(parse_module(code))
     transformer = QuoteTransformer(**kwargs)
     modified_module = module.visit(transformer)
     return modified_module.code
@@ -239,7 +281,12 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
     with open(file) as f:
         code = f.read()
 
-    modified = replace_quotes(code, target_python=config['target_version'], prefer_least_escapes=config['prefer_least_escapes'], quote_style=config['quote_style'])
+    modified = replace_quotes(
+        code,
+        target_python=config['target_version'],
+        prefer_least_escapes=config['prefer_least_escapes'],
+        quote_style=config['quote_style'],
+    )
 
     if config.get('dry_run', False):
         print('---')
@@ -254,7 +301,9 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
             f.write(modified)
 
 
-def file_is_ignored(file: Path, ignore: Optional[List[Path]], include: Optional[List[Path]]):
+def file_is_ignored(
+    file: Path, ignore: Optional[List[Path]], include: Optional[List[Path]]
+):
     file = file.absolute()
     is_ignored = False
     is_included = False

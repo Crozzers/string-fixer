@@ -23,7 +23,11 @@ special_cases = {
     'f_strings_py312': {'python': '>=3.12'},
     'f_strings_py311': {'python': '<=3.11'},
     'double_quote_style': {'quote_style': 'double'},
-    'least_escapes_false': {'prefer_least_escapes': False}
+    'least_escapes_false': {'prefer_least_escapes': False},
+    'triple_f_strings_py311': {'python': '<=3.11'},
+    'triple_f_strings_py312': {'python': '>=3.12'},
+    'multiline_splits_py312': {'python': '>=3.12'},
+    'multiline_splits': {'python': '<=3.11'},
 }
 
 @pytest.mark.parametrize('case', cases)
