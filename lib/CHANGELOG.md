@@ -5,7 +5,7 @@
 
 ## [0.4.1] - 2025-01-19
 
-### Changed
+### Fixed
 
 - Fix `AttributeError` when merging CLI args with local config
 
