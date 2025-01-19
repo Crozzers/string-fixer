@@ -236,7 +236,6 @@ def process_file(file: Path, config: Config, base_dir: Optional[Path] = None):
     assert file.is_file()
     base_dir = base_dir or file.parent
     print('Processing:', file)
-    print('Conf', config)
     with open(file) as f:
         code = f.read()
 

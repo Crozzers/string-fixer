@@ -165,9 +165,11 @@ def merge_with_cli_args(config: Config, args: argparse.Namespace) -> Config:
             continue
 
         if key == 'include' or key == 'ignore':
+            if not value:
+                continue
             if not config[key]:
                 config[key] = []
-            config[key].append(value)  # type: ignore
+            config[key].extend(value)  # type: ignore
         elif value:
             config[key] = value
 

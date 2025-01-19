@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Fix `AttributeError` when merging CLI args with local config
 
 ## [0.4.0] - 2024-06-27
 
