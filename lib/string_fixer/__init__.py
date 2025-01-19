@@ -189,6 +189,7 @@ class QuoteTransformer(cst.CSTTransformer):
             return super().leave_FormattedString(original_node, updated_node)
 
         new_parts = []
+        has_expressions = False
         for part in original_node.parts:
             # it would be better to split this block into the corresponding `leave_<NodeType>`.
             # Each nested fstring gets visited separately before the top-level one, meaning we will
@@ -203,6 +204,7 @@ class QuoteTransformer(cst.CSTTransformer):
                 )
                 new_parts.append(part.with_changes(value=value))
             elif isinstance(part, cst.FormattedStringExpression):
+                has_expressions = True
                 expression = part.expression
                 if isinstance(expression, FormattedString):
                     new_parts.append(
@@ -259,9 +261,19 @@ class QuoteTransformer(cst.CSTTransformer):
                 else:
                     new_parts.append(part)
             else:
+                has_expressions = True
                 new_parts.append(part)
 
         quote = get_quote(depth)
+        if not has_expressions:
+            prefix = original_node.prefix.replace('f', '')
+            text = ''.join(part.value for part in new_parts)
+            return cst.SimpleString(
+                f'{prefix}{quote}{text}{quote}',
+                lpar=original_node.lpar,
+                rpar=original_node.rpar,
+            )
+
         return updated_node.with_changes(
             parts=new_parts, start=f'{original_node.prefix}{quote}', end=quote
         )

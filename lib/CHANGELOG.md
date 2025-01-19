@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added ability to convert f-string with no placeholders into simple strings (F541)
+
 ### Fixed
 
 - Fix target parent folder check when config root is `./`
