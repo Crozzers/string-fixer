@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.5.0] - 2025-01-19
+
 ### Added
 
 - Added ability to convert f-string with no placeholders into simple strings (F541)
@@ -73,7 +76,8 @@
 - Initial release
 
 
-[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.1...HEAD
+[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.5.0...HEAD
+[0.5.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.1...lib/0.5.0
 [0.4.1]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.0...lib/0.4.1
 [0.4.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.3.0...lib/0.4.0
 [0.3.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.2.0...lib/0.3.0
