@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.4.1] - 2025-01-19
+
 ### Changed
 
 - Fix `AttributeError` when merging CLI args with local config
@@ -61,7 +64,8 @@
 - Initial release
 
 
-[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.0...HEAD
+[unreleased]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.1...HEAD
+[0.4.1]: https://github.com/Crozzers/string-fixer/compare/lib/0.4.0...lib/0.4.1
 [0.4.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.3.0...lib/0.4.0
 [0.3.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.2.0...lib/0.3.0
 [0.2.0]: https://github.com/Crozzers/string-fixer/compare/lib/0.1.0...lib/0.2.0
