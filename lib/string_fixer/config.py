@@ -55,7 +55,7 @@ DEFAULT_CONFIG: UnparsedConfig = {
 }
 
 
-def parse_config(config: UnparsedConfig, file: Path) -> Config:
+def parse_config(config: UnparsedConfig, file: Path, set_defaults=True) -> Config:
     config = deepcopy(config)
 
     if extends := config.get('extends', None):
@@ -65,8 +65,9 @@ def parse_config(config: UnparsedConfig, file: Path) -> Config:
 
         config = {**load_config_from_dir(extends), **config}
 
-    for key, value in DEFAULT_CONFIG.items():
-        config.setdefault(key, value)  # type: ignore
+    if set_defaults:
+        for key, value in DEFAULT_CONFIG.items():
+            config.setdefault(key, value)  # type: ignore
 
     if target := config.get('target'):
         config['target'] = (file.parent / target).resolve()
@@ -158,7 +159,7 @@ def load_config_from_dir(path: Path, limit: Optional[Path] = None) -> Config:
 def merge_with_cli_args(config: Config, args: argparse.Namespace) -> Config:
     # parse args relative to cwd so that any paths get fully expanded
     cli_config = parse_config(
-        cast(UnparsedConfig, vars(args)), Path.cwd() / 'pyproject.toml'
+        cast(UnparsedConfig, vars(args)), Path.cwd() / 'pyproject.toml', set_defaults=False
     )
     for key, value in cli_config.items():
         if key not in DEFAULT_CONFIG:

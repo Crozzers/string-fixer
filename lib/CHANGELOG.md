@@ -5,6 +5,7 @@
 ### Fixed
 
 - Fix target parent folder check when config root is `./`
+- Fix default argument values overriding local config values
 
 ## [0.4.1] - 2025-01-19
 
